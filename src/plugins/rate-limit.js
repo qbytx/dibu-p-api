@@ -153,5 +153,5 @@ function get429Page (message) {
 
 export default fp(rateLimit, {
     name: 'rateLimit',
-    dependencies: ['lru-cache']
+    dependencies: []
 });

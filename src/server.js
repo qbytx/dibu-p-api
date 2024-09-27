@@ -25,7 +25,8 @@ async function start () {
 
     await fastify.register(App);
 
-    const port = process.env.PORT || 4001;
+    // assumes Env module was loaded
+    const port = fastify.config.PORT || 4001;
 
     await fastify.listen({ port }, function (err, address) {
         if (err) {
