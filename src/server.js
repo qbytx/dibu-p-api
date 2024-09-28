@@ -1,20 +1,19 @@
-/*
-    [A Happy Note]
-    If you are using Node.js version 15+, 
-    the correct promise behaviour is already implemented 
-    and Node.js will safely behave on unhandled rejections 
-    similarly to its uncaught exception behaviour. 
-    If you are only using Node.js v15+ there is no need to use this module.
-
-    If you need to support older versions of 
-    Node.js - it is a good idea to use this module 
-    to ensure future compatibility with modern Node.js 
-    versions where the safe behaviour is the default one.
-*/
-
+require('dotenv').config();
 require('make-promises-safe');
 const Fastify = require('fastify');
+const env = require('@fastify/env');
 const App = require('./app.js');
+const S = require('fluent-json-schema');
+
+const envSchema = S.object()
+    .prop('PORT', S.string().default('4000')) 
+    .required(['PORT']);
+
+const envOptions = {
+    confKey: 'config', 
+    schema: envSchema,
+    dotenv: true
+}
 
 async function start () {
     
@@ -23,12 +22,26 @@ async function start () {
       logger: { level: 'info' }
     });
 
+    // register configuration variables here, at root
+    await fastify.register(env, envOptions);
+
     try {
         await fastify.register(App);
     } catch (err) {
         console.error('Error registering App:', err);
         process.exit(1);
     }
+
+    // assumes Env module was loaded
+    const port = fastify.config.PORT || 4001;
+
+    await fastify.listen({ port }, function (err, address) {
+        if (err) {
+            fastify.log.error(err);
+            console.error(err);
+            process.exit(1);
+        }
+    });
 }
 
 // Use an IIFE to call start and handle errors

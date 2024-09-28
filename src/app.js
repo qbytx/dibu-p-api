@@ -1,33 +1,10 @@
+const underPressure = require('@fastify/under-pressure');
 const autoload = require('@fastify/autoload');
 const sensible = require('@fastify/sensible');
-const env = require('@fastify/env');
 const cors = require('@fastify/cors');
-const underPressure = require('@fastify/under-pressure');
-const S = require('fluent-json-schema');
 const { join } = require('node:path');
 
 module.exports = async function (fastify, opts) {
-
-    // configure environment variables
-    require('dotenv').config();
-
-    // It's very common to pass secrets and configuration
-    // to your application via environment variables.
-    // The `fastify-env` plugin will expose those configuration
-    // under `fastify.config` and validate those at startup.
-
-    const schema = S.object()
-    .prop('PORT', S.string().default('4000')) // Default value as a string
-    .required(['PORT']);
-
-    const envOptions = {
-        confKey: 'config', // optional, default: 'config'
-        schema: schema,
-        dotenv: true
-        // data: data // optional, default: process.env
-    }
-
-    await fastify.register(env, envOptions);
 
     // Fastify is an extremely lightweight framework, it does very little for you.
     // Every feature you might need, such as cookies or database coonnectors
@@ -66,16 +43,5 @@ module.exports = async function (fastify, opts) {
         dir: join(__dirname, 'routes'),
         dirNameRoutePrefix: false,
         options: Object.assign({}, opts)
-    });
-
-    // assumes Env module was loaded
-    const port = fastify.config.PORT || 4001;
-
-    await fastify.listen({ port }, function (err, address) {
-        if (err) {
-            fastify.log.error(err);
-            console.error(err);
-            process.exit(1);
-        }
     });
 }
