@@ -1,6 +1,6 @@
-import fp from 'fastify-plugin';
-import RateLimit from '@fastify/rate-limit';
-import { LRUCache } from 'lru-cache';
+const fp = require('fastify-plugin');
+const RateLimit = require('@fastify/rate-limit');
+const { LRUCache } = require('lru-cache');
 
 /**
  * NOTE TO EVA / SELF: USING LRU CACHE
@@ -98,6 +98,11 @@ async function rateLimit(fastify, opts) {
         store: LRUStore,
         timeWindow: '1 minute',
         max: 100
+    }).ready(err => {
+        if(err) {
+            console.error(err);
+            process.exit(1);
+        }
     });
 }
 
@@ -151,7 +156,7 @@ function get429Page (message) {
   `;
 }
 
-export default fp(rateLimit, {
+module.exports = fp(rateLimit, {
     name: 'rateLimit',
     dependencies: []
 });

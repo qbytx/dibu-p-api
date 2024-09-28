@@ -3,12 +3,10 @@ const sensible = require('@fastify/sensible');
 const env = require('@fastify/env');
 const cors = require('@fastify/cors');
 const underPressure = require('@fastify/under-pressure');
+const S = require('fluent-json-schema');
+const { join } = require('node:path');
 
-import S from 'fluent-json-schema';
-import { join } from 'desm';
-
-
-export default async function (fastify, opts) {
+module.exports = async function (fastify, opts) {
 
     // configure environment variables
     require('dotenv').config();
@@ -18,15 +16,18 @@ export default async function (fastify, opts) {
     // The `fastify-env` plugin will expose those configuration
     // under `fastify.config` and validate those at startup.
 
-    const schema = S.object().prop('PORT', S.string().required()).valueOf();
+    const schema = S.object()
+    .prop('PORT', S.string().default('4000')) // Default value as a string
+    .required(['PORT']);
 
     const envOptions = {
         confKey: 'config', // optional, default: 'config'
         schema: schema,
+        dotenv: true
         // data: data // optional, default: process.env
     }
 
-    await fastify.register(Env, envOptions);
+    await fastify.register(env, envOptions);
 
     // Fastify is an extremely lightweight framework, it does very little for you.
     // Every feature you might need, such as cookies or database coonnectors
@@ -38,7 +39,7 @@ export default async function (fastify, opts) {
     // This plugin is especially useful if you expect a high load
     // on your application, it measures the process load and returns
     // a 503 if the process is undergoing too much stress.
-    await fastify.register(UnderPressure, {
+    await fastify.register(underPressure, {
         maxEventLoopDelay: 1000,
         maxHeapUsedBytes: 1000000000,
         maxRssBytes: 1000000000,
@@ -47,7 +48,7 @@ export default async function (fastify, opts) {
 
     // Enables the use of CORS in a Fastify application.
     // https://en.wikipedia.org/wiki/Cross-origin_resource_sharing
-    await fastify.register(Cors, {
+    await fastify.register(cors, {
         origin: false
     });
 
@@ -56,14 +57,25 @@ export default async function (fastify, opts) {
     // folder, even the subfolders. Take at look at its documentation, as it's doing a lot more!
     // First of all, we require all the plugins that we'll need in our application.
     await fastify.register(autoload, {
-        dir: join(import.meta.url, 'plugins'),
+        dir: join(__dirname, 'plugins'),
         options: Object.assign({}, opts)
     });
 
     // Then, we'll load all of our routes.
     await fastify.register(autoload, {
-        dir: join(import.meta.url, 'routes'),
+        dir: join(__dirname, 'routes'),
         dirNameRoutePrefix: false,
         options: Object.assign({}, opts)
+    });
+
+    // assumes Env module was loaded
+    const port = fastify.config.PORT || 4001;
+
+    await fastify.listen({ port }, function (err, address) {
+        if (err) {
+            fastify.log.error(err);
+            console.error(err);
+            process.exit(1);
+        }
     });
 }

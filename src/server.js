@@ -12,9 +12,9 @@
     versions where the safe behaviour is the default one.
 */
 
-import 'make-promises-safe';
-import Fastify from 'fastify';
-import App from './app.js';
+require('make-promises-safe');
+const Fastify = require('fastify');
+const App = require('./app.js');
 
 async function start () {
     
@@ -23,21 +23,20 @@ async function start () {
       logger: { level: 'info' }
     });
 
-    await fastify.register(App);
-
-    // assumes Env module was loaded
-    const port = fastify.config.PORT || 4001;
-
-    await fastify.listen({ port }, function (err, address) {
-        if (err) {
-            fastify.log.error(err);
-            console.error(err);
-            process.exit(1);
-        }
-    });
+    try {
+        await fastify.register(App);
+    } catch (err) {
+        console.error('Error registering App:', err);
+        process.exit(1);
+    }
 }
-  
-start().catch(err => {
-    console.error(err)
-    process.exit(1)
-});
+
+// Use an IIFE to call start and handle errors
+(async () => {
+    try {
+        await start();
+    } catch (err) {
+        console.error(err);
+        process.exit(1);
+    }
+})();
