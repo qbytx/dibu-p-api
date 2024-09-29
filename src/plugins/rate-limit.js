@@ -1,3 +1,5 @@
+'use strict';
+
 const fp = require('fastify-plugin');
 const RateLimit = require('@fastify/rate-limit');
 const { LRUCache } = require('lru-cache');
