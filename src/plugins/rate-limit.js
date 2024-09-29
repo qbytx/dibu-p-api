@@ -13,62 +13,62 @@ const { LRUCache } = require('lru-cache');
  * is Redis, due to its speed and the simple nature of the store data.
  * In this case we will reuse lru-cache, to avoid increase the complexity
  * of the codebase and the cost of the infrastructure.
- * 
+ *
  * Fastify offers a simple yet powerful plugin for handling rate limiting,
  * named `fastify-rate-limit`. Unfortunately lru-cache is not part
  * of the officially supported stores, so we'll write a custom one.
  */
 
 const cacheOptions = {
-    max: 100000, // Increase max number of items
-    maxSize: 50000000, // 50MB max size
-    sizeCalculation: (value, key) => {
-        // Estimate size: 4 bytes for current (integer), 8 bytes for ttl (timestamp)
-        // Plus length of the key (IP address) * 2 bytes per character
-        return 12 + (key.length * 2);
-    },
-    ttl: 1000 * 60 * 5, // Time-to-live in milliseconds (5 minutes)
-    updateAgeOnGet: false,
-    allowStale: false
-    // dispose: (value, key) => {
-    //     // Optional: Perform any cleanup if needed when an item is removed
-    // },
+  max: 100000, // Increase max number of items
+  maxSize: 50000000, // 50MB max size
+  sizeCalculation: (value, key) => {
+    // Estimate size: 4 bytes for current (integer), 8 bytes for ttl (timestamp)
+    // Plus length of the key (IP address) * 2 bytes per character
+    return 12 + (key.length * 2);
+  },
+  ttl: 1000 * 60 * 5, // Time-to-live in milliseconds (5 minutes)
+  updateAgeOnGet: false,
+  allowStale: false
+  // dispose: (value, key) => {
+  //     // Optional: Perform any cleanup if needed when an item is removed
+  // },
 };
 
 const cache = new LRUCache(cacheOptions);
 
 class LRUStore {
-    constructor(options) {
-        this.options = options;
+  constructor (options) {
+    this.options = options;
+  }
+
+  // This method will be called each time a new request comes in.
+  // To avoid sending too many request to lru-cache, we'll
+  // use the update API, which allow us to update the document
+  // if present, create it if it doesn't exists and read the
+  // updated document. In this way we'll send up to 2 requests
+  // to Elasticsearch for each `incr` call, but only one in case
+  // of frequent requests.
+
+  incr (key, callback) {
+    const { timeWindow } = this.options;
+    const now = Date.now();
+    const record = cache.get(key) || { current: 0, ttl: now + timeWindow };
+
+    if (record.ttl <= now) {
+      record.current = 1;
+      record.ttl = now + timeWindow;
+    } else {
+      record.current += 1;
     }
 
-    // This method will be called each time a new request comes in.
-    // To avoid sending too many request to lru-cache, we'll
-    // use the update API, which allow us to update the document
-    // if present, create it if it doesn't exists and read the
-    // updated document. In this way we'll send up to 2 requests
-    // to Elasticsearch for each `incr` call, but only one in case
-    // of frequent requests.
+    cache.set(key, record);
+    callback(null, record);
+  }
 
-    incr(key, callback) {
-        const { timeWindow } = this.options;
-        const now = Date.now();
-        const record = cache.get(key) || { current: 0, ttl: now + timeWindow };
-    
-        if (record.ttl <= now) {
-            record.current = 1;
-            record.ttl = now + timeWindow;
-        } else {
-            record.current += 1;
-        }
-    
-        cache.set(key, record);
-        callback(null, record);
-    }
-
-    child(routeOptions) {
-        return new LRUStore({ ...this.options, ...routeOptions });
-    }
+  child (routeOptions) {
+    return new LRUStore({ ...this.options, ...routeOptions });
+  }
 }
 
 // `fastify-rate-limit` does not allow to configure a custom response
@@ -79,36 +79,34 @@ class LRUStore {
 // the response to what you need. In this case, since we are serving a
 // frontend application, we want to send back an html page.
 
-function errorHandler(error, request, reply) {
-    if (error.statusCode === 429) {
+function errorHandler (error, request, reply) {
+  if (error.statusCode === 429) {
     return reply
-        .code(429)
-        .type('text/html')
-        .send(get429Page(error.message));
-    }
-    reply.send(error);
+      .code(429)
+      .type('text/html')
+      .send(get429Page(error.message));
+  }
+  reply.send(error);
 }
 
-async function rateLimit(fastify, opts) {
+async function rateLimit (fastify, opts) {
+  fastify.setErrorHandler(errorHandler);
 
-    fastify.setErrorHandler(errorHandler);
-
-    await fastify.register(RateLimit, {
-        allowList: ['127.0.0.1'], // no rate limit on localhost
-        store: LRUStore,
-        timeWindow: '1 minute',
-        max: 100
-    }).ready(err => {
-        if(err) {
-            console.error(err);
-            process.exit(1);
-        }
-    });
+  await fastify.register(RateLimit, {
+    allowList: ['127.0.0.1'], // no rate limit on localhost
+    store: LRUStore,
+    timeWindow: '1 minute',
+    max: 100
+  }).ready(err => {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
+  });
 }
 
 function get429Page (message) {
-    return 
-    `<!DOCTYPE html>
+  return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset='utf-8'>
@@ -157,6 +155,6 @@ function get429Page (message) {
 }
 
 module.exports = fp(rateLimit, {
-    name: 'rateLimit',
-    dependencies: []
+  name: 'rateLimit',
+  dependencies: []
 });
