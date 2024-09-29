@@ -3,3 +3,15 @@
 
 <script type="module" src="https://unpkg.com/dimport?module" data-main="/_app/public/build/main.js"></script>
 <script nomodule defer src="https://unpkg.com/dimport/nomodule" data-main="/_app/public/build/main.js"></script>
+
+// Exporting a constant named `autoPrefix` will tell
+// to `fastify-autoload` that this plugin must be loaded
+// with the prefix option. In this way every route declared
+// inside this plugin and its children will have the prefix
+// as part of the path.
+export const autoPrefix = '/_app'
+
+// const autoPrefix = '/_app';
+// since we are using `autoPrefix`, the final path will be `/_app/public`
+
+https://github.com/delvedor/fastify-example

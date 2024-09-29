@@ -1,18 +1,69 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
+<!doctype html>
+<html class="no-js" lang="en" data-theme="light">
+
 <head>
   <meta charset='utf-8'>
   <meta name="viewport" content="width=device-width, user-scalable=no, maximum-scale=1.0, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>Dibu-Api v0.0.1</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/bulma@0.9.1/css/bulma.min.css">
-  <link rel='stylesheet' href='/_app/public/build/bundle.css' rel="stylesheet">
-  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="description" content="">
 
+  <meta property="og:title" content="Dibu Api v0.0.1">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.cloudbyeva.online/api">
+  <meta property="og:image" content="https://i.imgur.com/zReN4HI.png">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <meta name="theme-color" content="#ffffff">
 </head>
+
 <body>
+
+  <div class="terminal">
+    <div class="terminal-body">
+        <div class="help-output">
+          <table>
+            <tr>
+              <td><span class="title">👻 Dibu Developer Api v0.0.1</span></td>
+            </tr>
+            <tr>
+              <td><span>Paths:</span></td>
+            </tr>
+          </table>
+          <table>
+            <tr>
+              <td class="table-data"><a href="#">/config</a></td>
+              <td><span>general app configuration</span></td>
+              <td><span>[JSON]</span></td>
+            </tr>
+            <tr>
+              <td class="table-data"><a href="#">/secrets</a></td>
+              <td><span>app keys & data</span></td>
+              <td><span>[JSON]</span></td>
+            </tr>
+            <tr>
+              <td class="table-data"><a href="#">/users</a></td>
+              <td><span>currently logged in users</span></td>
+              <td><span>[CSV]</span></td>
+            </tr>
+            <tr>
+              <td class="table-data"><a href="#">/status</a></td>
+              <td><span>status of app</span></td>
+              <td><span>[YAML]</span></td>
+            </tr>
+            <tr>
+              <td class="table-data"><a href="#">/version</a></td>
+              <td><span>latest stable release of dibumon</span></td>
+              <td><span>[JSON]</span></td>
+            </tr>
+          </table> 
+        </div>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
 </body>
+
 </html>
