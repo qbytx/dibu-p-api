@@ -19,7 +19,7 @@ const { LRUCache } = require('lru-cache');
  * of the officially supported stores, so we'll write a custom one.
  */
 
-const cacheOptions = {
+const defaultCacheOptions = {
   max: 100000, // Increase max number of items
   maxSize: 50000000, // 50MB max size
   sizeCalculation: (value, key) => {
@@ -35,25 +35,22 @@ const cacheOptions = {
   // },
 };
 
-const cache = new LRUCache(cacheOptions);
-
 class LRUStore {
   constructor (options) {
     this.options = options;
+    this.cache = new LRUCache({ ...defaultCacheOptions, ...options.cacheOptions });
   }
 
-  // This method will be called each time a new request comes in.
-  // To avoid sending too many request to lru-cache, we'll
-  // use the update API, which allow us to update the document
-  // if present, create it if it doesn't exists and read the
-  // updated document. In this way we'll send up to 2 requests
-  // to Elasticsearch for each `incr` call, but only one in case
-  // of frequent requests.
-
+  // (incr) method will be called each time a new request comes in.
   incr (key, callback) {
     const { timeWindow } = this.options;
+
+    if (timeWindow == null) {
+      return callback(new Error('timeWindow option is required'), null);
+    }
+
     const now = Date.now();
-    const record = cache.get(key) || { current: 0, ttl: now + timeWindow };
+    const record = this.cache.get(key) || { current: 0, ttl: now + timeWindow };
 
     if (record.ttl <= now) {
       record.current = 1;
@@ -62,10 +59,11 @@ class LRUStore {
       record.current += 1;
     }
 
-    cache.set(key, record);
+    this.cache.set(key, record);
     callback(null, record);
   }
 
+  // (child) handles creating a store per-route
   child (routeOptions) {
     return new LRUStore({ ...this.options, ...routeOptions });
   }
@@ -97,11 +95,6 @@ async function rateLimit (fastify, opts) {
     store: LRUStore,
     timeWindow: '1 minute',
     max: 100
-  }).ready(err => {
-    if (err) {
-      console.error(err);
-      process.exit(1);
-    }
   });
 }
 
