@@ -1,9 +1,9 @@
 'use strict';
 
 const { fileCache } = require('../config/fileCache');
-const { FILES } = require('../config/paths');
+const { FILES } = require('../config/filePaths');
 
-const file = fileCache[FILES.fileIndex]?.file;
+const file = fileCache[FILES.HTML_INDEX]?.file;
 
 module.exports = async function frontend (fastify, opts) {
   fastify.get('/', async (request, reply) => {

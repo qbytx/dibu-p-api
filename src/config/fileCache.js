@@ -2,15 +2,13 @@
 
 const fsPromises = require('node:fs').promises;
 
-const { paths, FILES } = require('./paths');
-
-const publicFiles = paths.public.files;
+const { filePaths, FILES } = require('./filePaths');
 
 const fileCache = {};
 
 const filePathMap = new Map([
-  [FILES.fileIndex, publicFiles[FILES.fileIndex]],
-  [FILES.file404, publicFiles[FILES.file404]]
+  [FILES.HTML_INDEX, filePaths.public.files[FILES.HTML_INDEX]],
+  [FILES.HTML_404, filePaths.public.files[FILES.HTML_404]]
 ]);
 
 const isFileCached = (fileKey) => {

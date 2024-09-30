@@ -1,9 +1,10 @@
 'use strict';
 
 const json = require('../../data/json/users.json');
+const routes = require('../../config/routes');
 
 module.exports = async function (fastify, opts) {
-  fastify.get('/users', async (request, reply) => {
+  fastify.get(routes.USERS, async (request, reply) => {
     return reply
       .code(200)
       .header('Content-Type', 'application/json')

@@ -1,9 +1,10 @@
 'use strict';
 
 const json = require('../../data/json/secrets.json');
+const routes = require('../../config/routes');
 
 module.exports = async function (fastify, opts) {
-  fastify.get('/secrets', async (request, reply) => {
+  fastify.get(routes.SECRETS, async (request, reply) => {
     return reply
       .code(200)
       .header('Content-Type', 'application/json')
@@ -11,8 +12,4 @@ module.exports = async function (fastify, opts) {
       .header('X-Custom-Header', 'Some-Value')
       .send(json);
   });
-
-  // fastify.post('/users', async (request, reply) => {
-  //   // Handle POST /users
-  // });
 };
