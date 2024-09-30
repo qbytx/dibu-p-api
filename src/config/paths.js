@@ -2,6 +2,7 @@
 
 const { join, resolve } = require('node:path');
 
+const API_VERSION = 'v1';
 const ERROR_DUPLICATE = 'duplicate path entry in object.';
 const scriptPath = resolve(join(__dirname, __filename));
 const publicPath = resolve(join(__dirname, '..', 'public'));
@@ -21,7 +22,11 @@ const DIRECTORIES = Object.freeze({
   publicDirCss: 'css',
   publicDirImg: 'img',
   srcDirPlugins: 'plugins',
-  srcDirRoutes: 'routes'
+  srcDirRoutes: 'routes',
+  srcDirData: 'data',
+  srcDirModels: 'models',
+  srcDirTemplates: 'templates',
+  srcDirApi: API_VERSION
 });
 
 /* Define object export */
@@ -59,7 +64,11 @@ const publicDirectories = new Map([
 
 const sourceDirectories = new Map([
   [DIRECTORIES.srcDirPlugins, `./${DIRECTORIES.srcDirPlugins}`],
-  [DIRECTORIES.srcDirRoutes, `./${DIRECTORIES.srcDirRoutes}`]
+  [DIRECTORIES.srcDirRoutes, `./${DIRECTORIES.srcDirRoutes}`],
+  [DIRECTORIES.srcDirData, `./${DIRECTORIES.srcDirData}`],
+  [DIRECTORIES.srcDirModels, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirModels}`],
+  [DIRECTORIES.srcDirTemplates, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirTemplates}`],
+  [DIRECTORIES.srcDirApi, `./${DIRECTORIES.srcDirRoutes}/${API_VERSION}`]
 ]);
 
 /*
@@ -75,6 +84,7 @@ for (const [k, v] of publicFiles) {
   if (paths.public.files[fileName] != null) {
     onError(ERROR_DUPLICATE, 'public-files');
   } else {
+    console.log(`Loaded [FILE] path: ${resolvedPath}`);
     paths.public.files[fileName] = resolvedPath;
   }
 }
@@ -92,6 +102,7 @@ for (const [k, v] of publicDirectories) {
   if (paths.public.directories[dirName] != null) {
     onError(ERROR_DUPLICATE, 'public-directories');
   } else {
+    console.log(`Loaded [PUBLIC] path: ${resolvedPath}`);
     paths.public.directories[dirName] = resolvedPath;
   }
 }
@@ -109,6 +120,7 @@ for (const [k, v] of sourceDirectories) {
   if (paths.src.directories[dirName] != null) {
     onError(ERROR_DUPLICATE, 'source-directories');
   } else {
+    console.log(`Loaded [SOURCE] path: ${resolvedPath}`);
     paths.src.directories[dirName] = resolvedPath;
   }
 }
