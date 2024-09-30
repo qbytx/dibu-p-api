@@ -1,6 +1,6 @@
 'use strict';
 
-const users = require('../../data/json/users.json');
+const json = require('../../data/json/users.json');
 
 module.exports = async function (fastify, opts) {
   fastify.get('/users', async (request, reply) => {
@@ -9,7 +9,7 @@ module.exports = async function (fastify, opts) {
       .header('Content-Type', 'application/json')
       .header('Cache-Control', 'no-store')
       .header('X-Custom-Header', 'Some-Value')
-      .send(users);
+      .send(json);
   });
 
   // fastify.post('/users', async (request, reply) => {

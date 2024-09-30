@@ -13,8 +13,16 @@ const filePathMap = new Map([
   [FILES.file404, publicFiles[FILES.file404]]
 ]);
 
+const isFileCached = (fileKey) => {
+  return fileCache[fileKey] && fileCache[fileKey].file != null;
+};
+
 const loadFileCache = async (fastify) => {
   for (const [k, v] of filePathMap) {
+    if (isFileCached(k)) {
+      console.error(`duplicate file caching: ${k} --- ${v}`);
+      continue;
+    }
     try {
       fileCache[k] = {
         key: k,
@@ -28,8 +36,9 @@ const loadFileCache = async (fastify) => {
         fastify.log.info(`[FILE] loaded: ${k}`);
       }
     } catch (error) {
-      fastify.log.error(`Failed to read file [${k}] at [${v}]: ${error.message}`);
-      process.exit(1);
+      const errorMsg = `Failed to read file [${k}] at [${v}]: ${error.message}`;
+      console.error(errorMsg);
+      fastify.log.error(errorMsg);
     }
   }
 };
