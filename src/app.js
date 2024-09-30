@@ -6,9 +6,8 @@ const Sensible = require('@fastify/sensible');
 const Helmet = require('@fastify/helmet');
 const Static = require('@fastify/static');
 const Cors = require('@fastify/cors');
-const fsPromises = require('node:fs').promises;
-const { paths, FILES, DIRECTORIES } = require('./config/paths');
-const buffers = require('./config/buffers');
+const { fileCache, loadFileCache } = require('./config/fileCache');
+const { paths, DIRECTORIES } = require('./config/paths');
 
 module.exports = async function (fastify, opts) {
   // `fastify-sensible` adds many  small utilities, such as nice http errors.
@@ -72,55 +71,18 @@ module.exports = async function (fastify, opts) {
     }
   });
 
-  /*
-    Static
-  */
-
+  /* Static */
   await fastify.register(Static, {
     root: paths.public.path,
     prefix: paths.public.pathPrefix
   });
 
-  /* temp buffer for index.html */
-
-  const bufferIndex = {
-    path: paths.public.files[FILES.fileIndex],
-    file: null
-  };
-
-  /* temp buffer for 404.html */
-
-  const buffer404 = {
-    path: paths.public.files[FILES.file404],
-    file: null
-  };
-
-  try {
-    bufferIndex.file = await fsPromises.readFile(bufferIndex.path);
-    if (bufferIndex.file != null) {
-      buffers.files.fileIndex.path = bufferIndex.path;
-      buffers.files.fileIndex.file = bufferIndex.file;
-    }
-  } catch (error) {
-    fastify.log.error(`Failed to read index.html file: ${error.message}`);
-    process.exit(1);
-  }
-
-  try {
-    buffer404.file = await fsPromises.readFile(buffer404.path);
-    if (buffer404.file != null) {
-      buffers.files.file404.path = buffer404.path;
-      buffers.files.file404.file = buffer404.file;
-    }
-  } catch (error) {
-    fastify.log.error(`Failed to read 404.html file: ${error.message}`);
-    process.exit(1);
-  }
+  /* Load files into memory */
+  await loadFileCache(fastify);
 
   /* not found decorator & handler */
-
   fastify.decorate('sendNotFound', (request, reply) => {
-    const { file } = buffers.files.file404;
+    const file = fileCache.html.html404.file;
     if (file != null) {
       reply.code(404).type('text/html').send(file);
     } else {
