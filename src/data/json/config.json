@@ -1,0 +1,56 @@
+{
+	"configs": {
+		"app": {
+			"name": "MyWebApp",
+			"version": "1.0.0",
+			"environment": "production",
+			"baseUrl": "https://www.mywebapp.com",
+			"port": 3000,
+			"maxConnections": 100,
+			"timeout": 5000
+		},
+		"database": {
+			"type": "mongodb",
+			"host": "localhost",
+			"port": 27017,
+			"dbName": "mywebapp_db",
+			"username": "db_user",
+			"password": "db_password"
+		},
+		"logging": {
+			"level": "info",
+			"logFile": "/var/log/mywebapp.log",
+			"maxFileSize": "10MB",
+			"maxFiles": "5"
+		},
+		"security": {
+			"enableHttps": true,
+			"session": {
+				"secret": "your_session_secret",
+				"cookie": {
+					"maxAge": 3600000,
+					"httpOnly": true
+				}
+			},
+			"rateLimiting": {
+				"enabled": true,
+				"windowMs": "15m",
+				"maxRequests": 100
+			}
+		},
+		"email": {
+			"service": "gmail",
+			"username": "your_email@gmail.com",
+			"password": "your_email_password",
+			"fromAddress": "no-reply@mywebapp.com"
+		},
+		"thirdPartyAPIs": {
+			"googleMaps": {
+				"apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+			},
+			"stripe": {
+				"apiKey": "YOUR_STRIPE_API_KEY"
+			}
+		}
+	}
+}

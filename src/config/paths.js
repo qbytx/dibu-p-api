@@ -24,6 +24,7 @@ const DIRECTORIES = Object.freeze({
   srcDirPlugins: 'plugins',
   srcDirRoutes: 'routes',
   srcDirData: 'data',
+  srcDirJson: 'json',
   srcDirModels: 'models',
   srcDirTemplates: 'templates',
   srcDirApi: API_VERSION
@@ -66,6 +67,7 @@ const sourceDirectories = new Map([
   [DIRECTORIES.srcDirPlugins, `./${DIRECTORIES.srcDirPlugins}`],
   [DIRECTORIES.srcDirRoutes, `./${DIRECTORIES.srcDirRoutes}`],
   [DIRECTORIES.srcDirData, `./${DIRECTORIES.srcDirData}`],
+  [DIRECTORIES.srcDirJson, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirJson}`],
   [DIRECTORIES.srcDirModels, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirModels}`],
   [DIRECTORIES.srcDirTemplates, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirTemplates}`],
   [DIRECTORIES.srcDirApi, `./${DIRECTORIES.srcDirRoutes}/${API_VERSION}`]

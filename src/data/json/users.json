@@ -1,0 +1,63 @@
+[
+	{
+		"id": 1,
+		"username": "johndoe",
+		"email": "johndoe@example.com",
+		"passwordHash": "hashed_password_1",
+		"firstName": "John",
+		"lastName": "Doe",
+		"dateOfBirth": "1990-05-15",
+		"profilePicture": "https://example.com/profiles/johndoe.jpg",
+		"createdAt": "2023-01-01T12:00:00Z",
+		"updatedAt": "2023-09-29T12:00:00Z",
+		"isActive": true,
+		"roles": [
+			"user"
+		],
+		"preferences": {
+			"language": "en",
+			"notifications": true
+		}
+	},
+	{
+		"id": 2,
+		"username": "janedoe",
+		"email": "janedoe@example.com",
+		"passwordHash": "hashed_password_2",
+		"firstName": "Jane",
+		"lastName": "Doe",
+		"dateOfBirth": "1992-08-25",
+		"profilePicture": "https://example.com/profiles/janedoe.jpg",
+		"createdAt": "2023-02-15T12:00:00Z",
+		"updatedAt": "2023-09-29T12:00:00Z",
+		"isActive": true,
+		"roles": [
+			"user",
+			"admin"
+		],
+		"preferences": {
+			"language": "fr",
+			"notifications": false
+		}
+	},
+	{
+		"id": 3,
+		"username": "samsmith",
+		"email": "samsmith@example.com",
+		"passwordHash": "hashed_password_3",
+		"firstName": "Sam",
+		"lastName": "Smith",
+		"dateOfBirth": "1985-12-10",
+		"profilePicture": "https://example.com/profiles/samsmith.jpg",
+		"createdAt": "2023-03-05T12:00:00Z",
+		"updatedAt": "2023-09-29T12:00:00Z",
+		"isActive": false,
+		"roles": [
+			"user"
+		],
+		"preferences": {
+			"language": "en",
+			"notifications": true
+		}
+	}
+]

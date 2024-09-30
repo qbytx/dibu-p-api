@@ -1,0 +1,19 @@
+{
+    "status": {
+        "uptime": "48 hours",
+        "isHealthy": true,
+        "version": "1.0.0",
+        "lastRestart": "2024-09-29T12:00:00Z",
+        "activeUsers": 42,
+        "serviceStatus": {
+            "database": "OK",
+            "api": "OK",
+            "cache": "WARNING",
+            "externalServices": {
+                "serviceA": "OK",
+                "serviceB": "DOWN"
+            }
+        }
+    }
+}
+  

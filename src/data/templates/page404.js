@@ -1,0 +1,24 @@
+function get404Page (message) {
+  return `<html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="robots" content="noindex, nofollow">
+      <title>Page Not Found</title>
+      <meta name="viewport" content="width=device-width, user-scalable=no, maximum-scale=1.0, initial-scale=1.0">
+      <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+      <div class="terminal">
+        <div class="terminal-body">
+        <div class="help-output">
+          <h2>⚠️ 404</h2>
+          <h1>Page Not Found</h1>
+          <p>Sorry, the page you are looking for does not exist.</p>
+        </div>
+        </div>
+      </div>
+    </body>
+    </html>`;
+}
+
+module.exports = get404Page;
