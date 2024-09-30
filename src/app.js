@@ -7,7 +7,7 @@ const Helmet = require('@fastify/helmet');
 const Static = require('@fastify/static');
 const Cors = require('@fastify/cors');
 const { fileCache, loadFileCache } = require('./config/fileCache');
-const { paths, DIRECTORIES } = require('./config/paths');
+const { paths, FILES, DIRECTORIES } = require('./config/paths');
 
 module.exports = async function (fastify, opts) {
   // `fastify-sensible` adds many  small utilities, such as nice http errors.
@@ -82,7 +82,7 @@ module.exports = async function (fastify, opts) {
 
   /* not found decorator & handler */
   fastify.decorate('sendNotFound', (request, reply) => {
-    const file = fileCache.html.html404.file;
+    const file = fileCache[FILES.file404]?.file;
     if (file != null) {
       reply.code(404).type('text/html').send(file);
     } else {
