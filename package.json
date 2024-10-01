@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "test": "test",
+    "migrate": "node-pg-migrate -m ./src/migrations",
     "start": "node ./src/server.js"
   },
   "author": "qbytx",
@@ -32,6 +33,7 @@
     "sqlstring": "^2.3.3"
   },
   "devDependencies": {
+    "node-pg-migrate": "^7.7.0",
     "semistandard": "^17.0.0"
   }
 }
