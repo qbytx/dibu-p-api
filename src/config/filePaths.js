@@ -66,14 +66,15 @@ const filePaths = {
 /**
  * Resolves and adds paths to the target object.
  *
- * @param {Object} options - The options for resolving and adding paths.
- * @param {string} options.basePath - The base path to resolve against.
- * @param {Map<string, string>} options.pathMap - A map of key-value pairs representing paths to resolve.
- * @param {Object} options.targetObject - The object to which resolved paths will be added.
- * @param {string} options.pathType - A string describing the type of paths being resolved (e.g., 'file', 'directory').
- * @throws {Error} Throws an error if a duplicate path is encountered.
+ * @param {Object} options - Options for path resolution.
+ * @param {string} options.basePath - Base path to resolve against.
+ * @param {Map<string, string>} options.pathMap - Key-value pairs of paths to resolve.
+ * @param {Object} options.targetObject - Object to add resolved paths to.
+ * @param {string} options.pathType - Type of paths (e.g., 'file', 'directory').
+ * @param {Object} fastify - Fastify instance for logging.
+ * @throws {Error} Throws if a duplicate path is encountered.
  */
-function resolveAndAddPath ({ basePath, pathMap, targetObject, pathType }) {
+function resolveAndAddPath ({ basePath, pathMap, targetObject, pathType }, fastify) {
   for (const [key, relativePath] of pathMap) {
     const fullPath = join(basePath, relativePath);
     const resolvedPath = resolve(fullPath);
@@ -83,7 +84,7 @@ function resolveAndAddPath ({ basePath, pathMap, targetObject, pathType }) {
       onError(ERROR_DUPLICATE, errorMessage);
     }
 
-    console.log(`Loaded [${pathType.toUpperCase()}] path: ${resolvedPath}`);
+    fastify.log.info(`Loaded [${pathType.toUpperCase()}] path: ${resolvedPath}`);
     targetObject[key] = resolvedPath;
   }
 }
@@ -97,16 +98,19 @@ function createOptions (basePath, pathMap, targetObject, pathType) {
   };
 }
 
-// Resolve and add public files
-resolveAndAddPath(createOptions(publicPath, publicFiles, filePaths.public.files, 'public-file'));
+const loadFilePaths = async (fastify) => {
+  // Resolve and add public files
+  resolveAndAddPath(createOptions(publicPath, publicFiles, filePaths.public.files, 'public-file'), fastify);
 
-// Resolve and add public directories
-resolveAndAddPath(createOptions(publicPath, publicDirectories, filePaths.public.directories, 'public-directory'));
+  // Resolve and add public directories
+  resolveAndAddPath(createOptions(publicPath, publicDirectories, filePaths.public.directories, 'public-directory'), fastify);
 
-// Resolve and add source directories
-resolveAndAddPath(createOptions(sourcePath, sourceDirectories, filePaths.src.directories, 'source-directory'));
+  // Resolve and add source directories
+  resolveAndAddPath(createOptions(sourcePath, sourceDirectories, filePaths.src.directories, 'source-directory'), fastify);
+};
 
 module.exports = {
+  loadFilePaths,
   filePaths,
   FILES,
   DIRECTORIES

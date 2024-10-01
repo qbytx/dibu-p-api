@@ -1,46 +1,89 @@
 'use strict';
 
+const SqlString = require('sqlstring');
+
 const pgp = require('pg-promise')({
   capSQL: true // capitalize all generated SQL
 });
 
-let db = null;
-
-const getConnection = () => {
-  if (db === null) {
-    throw new Error('Database not initialized. Call connectDatabase first.');
-  } else return db;
+const dbManager = {
+  db: null,
+  fastify: null
 };
 
-async function listConnections () {
-  const query = `SELECT pid, usename, application_name, client_addr, backend_start, state
-                 FROM pg_stat_activity;`;
+const log = (i) => {
+  if (dbManager?.fastify != null) {
+    dbManager.fastify.log.info(i);
+  } else {
+    console.log(i);
+  }
+};
+
+const initialized = () => {
+  return dbManager != null && dbManager.db != null && dbManager.fastify != null;
+};
+
+const throwInitializationError = () => {
+  throw new Error('Database not initialized. Call connectDatabase first.');
+};
+
+const getConnection = () => {
+  if (!initialized()) {
+    throwInitializationError();
+  } else return dbManager.db;
+};
+
+async function listConnections (usename = null) {
+  if (!initialized()) {
+    throwInitializationError();
+  }
+
+  let query = 'SELECT pid, usename, application_name, client_addr, backend_start, state FROM pg_stat_activity';
+
+  if (usename !== null) {
+    const formattedQuery = SqlString.format(`${query} WHERE usename = ?`, [usename]);
+    query = formattedQuery;
+  }
+
+  // Execute the query with parameterized input
   try {
-    const connections = await db.any(query);
-    console.log(connections);
+    const connections = await dbManager.db.any(query);
+    log(connections);
   } catch (error) {
-    console.error('Error fetching connections:', error);
+    log(`Error fetching connections: ${error.message}, SQL State: ${error.code}`);
   }
 }
 
-const closeDatabase = async (fastify) => {
-  fastify.log.info('closing db');
+const closeDatabase = async () => {
+  if (!initialized()) {
+    throwInitializationError();
+  }
+
+  log('Closing db');
   try {
-    if (db) {
-      await db.$pool.end(); // Gracefully end connection pool
-      fastify.log.info('All database connections closed');
-    }
+    // end connection pool
+    await dbManager.db.$pool.end();
+    log('All database connections closed');
   } catch (error) {
-    fastify.log.error('Error closing database connections:', error);
+    log('Error closing database connections:', error);
   } finally {
     pgp.end(); // End pg-promise instance
   }
 };
 
+const getDatabase = () => {
+  if (!initialized()) {
+    throwInitializationError();
+  }
+  return dbManager?.db;
+};
+
 const connectDatabase = async (fastify, secrets) => {
-  if (db !== null) {
-    fastify.log.info('Database already initialized');
-    return db;
+  dbManager.fastify = fastify;
+
+  if (dbManager.db != null) {
+    log('Database already initialized');
+    return false;
   }
 
   const connectionString = secrets.pgConnectionString.secretValue;
@@ -52,29 +95,28 @@ const connectDatabase = async (fastify, secrets) => {
   };
 
   try {
-    db = pgp(cn);
+    dbManager.db = pgp(cn);
 
     // connection
-    await db.connect();
-    fastify.log.info('Successfully connected to the database');
-    fastify.log.info(`Max connections set to: ${maxConnections}`);
+    await dbManager.db.connect();
+    log('Successfully connected to the database');
+    log(`Max connections set to: ${maxConnections}`);
 
-    // list all connections to db
-    await listConnections();
-
-    // Attach the db instance to fastify
-    fastify.decorate('db', db);
-
-    // Add a hook to close the database connection when Fastify closes
-    fastify.addHook('onClose', async (instance) => {
-      await closeDatabase(instance);
-    });
-
-    return db;
+    return true;
   } catch (error) {
-    fastify.log.error('Error initializing database:', error);
+    log(`Error initializing database: ${error}`);
     throw error;
   }
 };
 
-module.exports = { connectDatabase, getConnection };
+const linkDatabase = (fastify) => {
+  // Attach the db instance to fastify (Note, cannot do this after server start)
+  fastify.decorate('getDatabase', getDatabase);
+
+  // Add a hook to close the database connection when Fastify closes
+  fastify.addHook('onClose', async (instance) => {
+    await closeDatabase(instance);
+  });
+};
+
+module.exports = { connectDatabase, getConnection, listConnections, linkDatabase };

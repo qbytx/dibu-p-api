@@ -6,21 +6,10 @@ const Sensible = require('@fastify/sensible');
 const Helmet = require('@fastify/helmet');
 const Static = require('@fastify/static');
 const Cors = require('@fastify/cors');
-const { secrets, loadSecrets } = require('./config/secrets');
-const { connectDatabase } = require('./services/database');
 const { fileCache, loadFileCache } = require('./config/fileCache');
 const { filePaths, FILES, DIRECTORIES } = require('./config/filePaths');
 
 module.exports = async function (fastify, opts) {
-  /* Secrets */
-  const secretsLoaded = await loadSecrets(fastify);
-  if (secretsLoaded === true) {
-    await connectDatabase(fastify, secrets);
-  } else {
-    fastify.log.error('[failed to initialize secrets]');
-    process.exit(1);
-  }
-
   // `fastify-sensible` adds many  small utilities, such as nice http errors.
   await fastify.register(Sensible);
 
