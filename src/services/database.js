@@ -8,6 +8,7 @@ const pgp = require('pg-promise')({
 
 const dbManager = {
   db: null,
+  cn: '',
   fastify: null
 };
 
@@ -78,6 +79,13 @@ const getDatabase = () => {
   return dbManager?.db;
 };
 
+const getConnectionString = () => {
+  if (!initialized()) {
+    throwInitializationError();
+  }
+  return dbManager?.cn;
+};
+
 const connectDatabase = async (fastify, secrets) => {
   dbManager.fastify = fastify;
 
@@ -86,18 +94,17 @@ const connectDatabase = async (fastify, secrets) => {
     return false;
   }
 
-  const connectionString = secrets.pgConnectionString.secretValue;
-  const maxConnections = fastify.config.DB_MAX_CONNECTIONS || 30;
-
-  const cn = {
-    connectionString,
-    max: parseInt(maxConnections, 10)
-  };
+  const cn = secrets.pgConnectionString.secretValue;
+  const maxConnections = parseInt(fastify.config.DB_MAX_CONNECTIONS || 30, 10); // 10 is base
 
   try {
-    dbManager.db = pgp(cn);
+    dbManager.db = pgp({
+      connectionString: cn,
+      max: maxConnections
+    });
+    dbManager.cn = cn;
 
-    // connection
+    // connect
     await dbManager.db.connect();
     log('Successfully connected to the database');
     log(`Max connections set to: ${maxConnections}`);
@@ -119,4 +126,4 @@ const linkDatabase = (fastify) => {
   });
 };
 
-module.exports = { connectDatabase, getConnection, listConnections, linkDatabase };
+module.exports = { connectDatabase, getConnection, getConnectionString, listConnections, linkDatabase };

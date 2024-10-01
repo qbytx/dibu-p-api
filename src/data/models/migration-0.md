@@ -12,9 +12,10 @@
 | `updated_at`                | timestamp   | When the user account was last updated.               |
 | `last_login`                | timestamp   | Timestamp of the last login.                          |
 | `email_verified`            | boolean     | Indicates if the user's email is verified.            |
-| `is_active`                 | boolean     | true if user was active in last 90 days.              |
+| `is_active`                 | boolean     | true if user was active in last 180 days.             |
 | `is_online`                 | boolean     | true if user is online.                               |
 | `created_by`                | integer     | (0 = client, 1 = admin).                              |
+| `friends`                   | JSON        | Array of user's friends.                              |
 | `log_activity`              | JSON        | User activity logs.                                   |
 | `data_acccount`             | JSON        | User-specific account data.                           |
 | `data_settings`             | JSON        | User-specific settings data.                          |
@@ -37,8 +38,6 @@
       "item_quantity": "integer" // Quantity of the item owned.
     }
   ],
-  "starCount": "integer",  // Total number of stars the user has accumulated.
-  "dibuPoints": "integer", // Points awarded to the user for various actions/achievements.
   "stats": {
     "stars": "integer", // Any other relevant stats can be added here.
     "coins": "integer", // Any other relevant stats can be added here.
