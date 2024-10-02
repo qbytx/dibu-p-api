@@ -1,7 +1,7 @@
-// const { getConnection } = require('../services/db/database');
+// const { getDatabase } = require('../services/db/database');
 
 // const getConfig = () => {
-//   const db = getConnection();
+//   const db = getDatabase();
 //   if (db == null) {
 //     return null;
 //   } else {

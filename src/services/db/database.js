@@ -29,10 +29,16 @@ const throwInitializationError = () => {
   throw new Error('Database not initialized. Call connectDatabase first.');
 };
 
-const getConnection = () => {
+const getDatabase = () => {
   if (!initialized()) {
     throwInitializationError();
-  } else return dbManager.db;
+  } else return dbManager?.db;
+};
+
+const getConnectionString = () => {
+  if (!initialized()) {
+    throwInitializationError();
+  } else return dbManager?.cn;
 };
 
 async function listConnections (usename = null) {
@@ -71,20 +77,6 @@ const closeDatabase = async () => {
   } finally {
     pgp.end(); // End pg-promise instance
   }
-};
-
-const getDatabase = () => {
-  if (!initialized()) {
-    throwInitializationError();
-  }
-  return dbManager?.db;
-};
-
-const getConnectionString = () => {
-  if (!initialized()) {
-    throwInitializationError();
-  }
-  return dbManager?.cn;
 };
 
 const connectDatabase = async (fastify, secrets) => {
@@ -127,4 +119,4 @@ const linkDatabase = (fastify) => {
   });
 };
 
-module.exports = { connectDatabase, getConnection, getConnectionString, listConnections, linkDatabase };
+module.exports = { connectDatabase, getDatabase, getConnectionString, listConnections, linkDatabase };
