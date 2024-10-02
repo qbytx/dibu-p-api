@@ -14,7 +14,7 @@ const { environmentOptions } = require('./lib/environment.js');
 
 // services
 const { secrets, loadSecrets } = require('./services/secrets.js');
-const { connectDatabase, linkDatabase } = require('./services/database');
+const { connectDatabase, linkDatabase } = require('./services/db/database');
 
 async function start () {
   const fastify = Fastify({
