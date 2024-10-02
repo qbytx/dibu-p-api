@@ -88,7 +88,7 @@ const connectDatabase = async (fastify, secrets) => {
   }
 
   const cn = secrets.pgConnectionString.secretValue;
-  const maxConnections = parseInt(databaseConfig.poolSize || 20, 10); // 10 is base
+  const maxConnections = parseInt(databaseConfig.poolSize || 15, 10); // 10 is base
 
   try {
     dbManager.db = pgp({
