@@ -1,5 +1,6 @@
 'use strict';
 
+const databaseConfig = require('config').get('database');
 const SqlString = require('sqlstring');
 
 const pgp = require('pg-promise')({
@@ -95,7 +96,7 @@ const connectDatabase = async (fastify, secrets) => {
   }
 
   const cn = secrets.pgConnectionString.secretValue;
-  const maxConnections = parseInt(fastify.config.DB_MAX_CONNECTIONS || 30, 10); // 10 is base
+  const maxConnections = parseInt(databaseConfig.poolSize || 20, 10); // 10 is base
 
   try {
     dbManager.db = pgp({

@@ -28,7 +28,7 @@ const loadSecrets = async (fastify) => {
   const clientId = fastify.config.MACHINE0_IDENTITY_CLIENT_ID;
   const clientSecret = fastify.config.MACHINE0_IDENTITY_CLIENT_SECRET;
   const projectId = fastify.config.DIBUMON_SECRETS_PROJECT_ID;
-  const environment = fastify.config.ENVIRONMENT;
+  const environment = fastify.config.DIBUMON_SECRETS_ENVIRONMENT;
 
   // infiscal names
   const nameSupabaseConnectionString = 'SUPABASE_CONNECTION_STRING';

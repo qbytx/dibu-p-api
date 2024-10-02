@@ -1,7 +1,7 @@
 'use strict';
 
 const json = require('../../data/json/status.json');
-const routes = require('../../config/routes');
+const routes = require('../../lib/routes');
 
 module.exports = async function (fastify, opts) {
   fastify.get(routes.STATUS, async (request, reply) => {

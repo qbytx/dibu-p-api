@@ -1,5 +1,4 @@
-const serverSettings = require('./server-settings.json');
-const API = serverSettings.API;
+const API = require('config').get('api').name;
 
 const ROUTES = Object.freeze({
   CONFIG: `/${API}/config`,

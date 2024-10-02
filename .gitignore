@@ -72,6 +72,12 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
+# Ignore all files in the node-config src/config directory
+src/config/*
+
+# But not the directory itself
+!src/config/.gitkeep
+
 # dotenv environment variable files
 .env
 .env.development.local

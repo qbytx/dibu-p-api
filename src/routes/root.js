@@ -1,7 +1,7 @@
 'use strict';
 
-const { fileCache } = require('../config/fileCache');
-const { FILES } = require('../config/filePaths');
+const { fileCache } = require('../lib/fileCache');
+const { FILES } = require('../lib/filePaths');
 
 const file = fileCache[FILES.HTML_INDEX]?.file;
 

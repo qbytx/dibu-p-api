@@ -6,8 +6,9 @@ const Sensible = require('@fastify/sensible');
 const Helmet = require('@fastify/helmet');
 const Static = require('@fastify/static');
 const Cors = require('@fastify/cors');
-const { fileCache, loadFileCache } = require('./config/fileCache');
-const { filePaths, FILES, DIRECTORIES } = require('./config/filePaths');
+
+const { fileCache, loadFileCache } = require('./lib/fileCache');
+const { filePaths, FILES, DIRECTORIES } = require('./lib/filePaths');
 
 module.exports = async function (fastify, opts) {
   // `fastify-sensible` adds many  small utilities, such as nice http errors.

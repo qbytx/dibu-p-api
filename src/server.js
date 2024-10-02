@@ -2,14 +2,15 @@
 
 require('dotenv').config();
 require('make-promises-safe');
+const config = require('config');
 const Fastify = require('fastify');
 const env = require('@fastify/env');
 const App = require('./app.js');
 
 // config
-const { loadFilePaths } = require('./config/filePaths.js');
-const { loggingOptions } = require('./config/logging.js');
-const { environmentOptions } = require('./config/environment.js');
+const { loadFilePaths } = require('./lib/filePaths.js');
+const { loggingOptions } = require('./lib/logging.js');
+const { environmentOptions } = require('./lib/environment.js');
 
 // services
 const { secrets, loadSecrets } = require('./services/secrets.js');
@@ -36,7 +37,7 @@ async function start () {
      * Start Server
      */
 
-    const port = fastify.config.PORT;
+    const port = config.get('server').port;
     await fastify.listen({ port });
     fastify.log.info(`Server listening on port ${port}`);
 

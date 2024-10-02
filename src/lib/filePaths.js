@@ -1,9 +1,9 @@
 'use strict';
 const { join, resolve } = require('node:path');
-const serverSettings = require('../config/server-settings.json');
+const config = require('config');
 
 // Constants
-const API_VERSION = serverSettings.API;
+const API_VERSION = config.get('api').name;
 const ERROR_DUPLICATE = 'duplicate path entry in object.';
 const _joinScriptPath = join(__dirname, __filename);
 const _joinPublicPath = join(__dirname, '..', 'public');
