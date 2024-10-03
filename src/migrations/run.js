@@ -7,7 +7,7 @@ const { isDefined } = require('../utils/params');
 const DIRECTIONS = Object.freeze(['up', 'down']);
 
 const MIGRATION_DIRECTORIES = Object.freeze({
-  user: './migrations-user',
+  users: './migrations-users',
   app: './migrations-app'
 });
 
