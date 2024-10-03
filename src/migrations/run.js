@@ -1,3 +1,4 @@
+require('dotenv').config();
 const yargs = require('yargs');
 const { run } = require('node-pg-migrate');
 const { loadSecrets, getSecrets, getEnvConfiguration } = require('../services/secrets');
@@ -41,7 +42,6 @@ const argv = yargs
 
 async function runMigration (schemaName, direction, count) {
   try {
-    require('dotenv').config();
     await loadSecrets(getEnvConfiguration());
     await connectDatabase(getSecrets(), null);
 
@@ -78,7 +78,7 @@ async function runMigration (schemaName, direction, count) {
 
 function validateParams (params) {
   const undefinedParams = Object.entries(params)
-    .filter(([_, value]) => !isDefined(value))
+    .filter(([_, value]) => !isDefined([value]))
     .map(([key, _]) => key);
 
   if (undefinedParams.length > 0) {
