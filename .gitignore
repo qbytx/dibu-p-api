@@ -74,6 +74,8 @@ web_modules/
 
 # Ignore all files in the node-config src/config directory
 src/config/*
+# Ignore all files inside the certs directory
+/src/config/certs/*
 
 # But not the directory itself
 !src/config/.gitkeep
