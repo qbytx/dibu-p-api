@@ -61,22 +61,33 @@ const connectDatabase = async (secrets, fastify = null) => {
 
   const cn = secrets.pgConnectionString.secretValue;
   const maxConnections = parseInt(databaseConfig.poolSize || 15, 10); // 10 is base
+  const parsedCn = new URL(cn);
 
   try {
-    dbManager.db = pgp({
+    const config = {
       connectionString: cn,
       max: maxConnections
-    });
+    };
+
+    dbManager.db = pgp(config);
     dbManager.cn = cn;
 
     // Connect to the database
     await dbManager.db.connect();
     logger.info('Successfully connected to the database');
     logger.info(`Max connections set to: ${maxConnections}`);
+    logger.info(`Connected to: ${parsedCn.host}:${parsedCn.port}/${parsedCn.pathname.slice(1)}`);
 
     return true;
   } catch (error) {
-    logger.error(`Error initializing database: ${error}`);
+    logger.error('Error initializing database:', error);
+    if (error.code === 'ECONNREFUSED') {
+      logger.error('Connection refused. Please check if PostgreSQL is running and the connection details are correct.');
+    } else if (error.code === 'ENOTFOUND') {
+      logger.error('Host not found. Please check the database host in your connection string.');
+    } else if (error.code === 'ETIMEDOUT') {
+      logger.error('Connection timed out. Please check your network or firewall settings.');
+    }
     throw error;
   }
 };

@@ -1,12 +1,12 @@
 require('dotenv').config();
 const yargs = require('yargs');
-const { run } = require('node-pg-migrate');
+const logger = require('../utils/logger');
+const { runner } = require('node-pg-migrate');
 const { loadSecrets, getSecrets, getEnvConfiguration } = require('../services/secrets');
 const { connectDatabase, getDatabase } = require('../services/db/database');
 const { isDefined } = require('../utils/params');
 
 const DIRECTIONS = Object.freeze(['up', 'down']);
-
 const MIGRATION_DIRECTORIES = Object.freeze({
   users: './migrations-users',
   app: './migrations-app'
@@ -17,7 +17,6 @@ const argv = yargs
     alias: 's',
     description: 'Schema to migrate',
     type: 'string',
-    default: '',
     choices: Object.keys(MIGRATION_DIRECTORIES),
     demandOption: true
   })
@@ -25,7 +24,6 @@ const argv = yargs
     alias: 'd',
     description: 'Migration direction (up or down)',
     type: 'string',
-    default: '',
     choices: DIRECTIONS,
     demandOption: true
   })
@@ -33,8 +31,7 @@ const argv = yargs
     alias: 'c',
     description: 'Number of migrations to run',
     type: 'number',
-    default: 0,
-    demandOption: true
+    default: 0
   })
   .help()
   .alias('help', 'h')
@@ -44,60 +41,55 @@ async function runMigration (schemaName, direction, count) {
   try {
     await loadSecrets(getEnvConfiguration());
     await connectDatabase(getSecrets(), null);
-
     const db = getDatabase();
-
     if (db == null) {
       throw new Error('Failed to get database connection');
     }
-
+    const dir = MIGRATION_DIRECTORIES[schemaName];
     const config = {
-      dbClient: db,
+      dbClient: db.pg,
       migrationsTable: 'pgmigrations',
       migrationsSchema: 'migrations',
-      schema: schemaName,
-      dir: MIGRATION_DIRECTORIES[schemaName],
+      schemas: [schemaName],
+      dir,
       checkOrder: true,
       direction,
       count,
       createSchema: false,
       createMigrationsSchema: false,
       noLock: false,
-      decamelize: true
+      decamelize: true,
+      logger
     };
 
     // Run migration
-    await run(config);
-    console.log(`Migration for schema '${schemaName}' completed successfully.`);
+    await runner(config);
+    logger.info(`Migration for schema '${schemaName}' completed successfully.`);
     return true;
   } catch (error) {
-    console.error(`Migration failed: ${error.message}`);
+    logger.error(`Migration failed: ${error.message}`);
     return false;
   }
 }
 
 function validateParams (params) {
-  const undefinedParams = Object.entries(params)
-    .filter(([_, value]) => !isDefined([value]))
-    .map(([key, _]) => key);
-
-  if (undefinedParams.length > 0) {
-    console.error(`Error: The following parameters are undefined: ${undefinedParams.join(', ')}`);
+  if (!isDefined([params.schema, params.direction, params.count])) {
+    logger.error('Error: One or more required parameters are undefined');
     return false;
   }
 
   if (!Object.keys(MIGRATION_DIRECTORIES).includes(params.schema)) {
-    console.error(`Error: Invalid schema. Must be one of: ${Object.keys(MIGRATION_DIRECTORIES).join(', ')}`);
+    logger.error(`Error: Invalid schema. Must be one of: ${Object.keys(MIGRATION_DIRECTORIES).join(', ')}`);
     return false;
   }
 
   if (!DIRECTIONS.includes(params.direction)) {
-    console.error(`Error: Direction must be either: ${DIRECTIONS.join(', ')}`);
+    logger.error(`Error: Direction must be either: ${DIRECTIONS.join(', ')}`);
     return false;
   }
 
   if (typeof params.count !== 'number' || params.count < 1) {
-    console.error('Error: Count must be a positive number or Infinity');
+    logger.error('Error: Count must be a positive number or Infinity');
     return false;
   }
 
@@ -109,11 +101,7 @@ const { schema, direction, count } = argv;
 if (validateParams({ schema, direction, count })) {
   runMigration(schema, direction, count)
     .then((success) => {
-      if (success) {
-        process.exit(0);
-      } else {
-        process.exit(1);
-      }
+      process.exit(success ? 0 : 1);
     });
 } else {
   yargs.showHelp();
