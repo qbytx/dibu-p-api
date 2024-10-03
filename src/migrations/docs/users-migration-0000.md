@@ -17,7 +17,7 @@
 | `created_by`                | integer     | (0 = client, 1 = admin).                              |
 | `friends`                   | JSON        | Array of user's friends.                              |
 | `log_activity`              | JSON        | User activity logs.                                   |
-| `data_acccount`             | JSON        | User-specific account data.                           |
+| `data_account`              | JSON        | User-specific account data.                           |
 | `data_settings`             | JSON        | User-specific settings data.                          |
 | `data_discord`              | JSON        | JSON object for Discord-specific data.                |
 | `data_google`               | JSON        | JSON object for Google-specific data.                 |
