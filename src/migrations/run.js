@@ -15,6 +15,7 @@ const argv = yargs
     alias: 's',
     description: 'Schema to migrate',
     type: 'string',
+    default: '',
     choices: Object.keys(MIGRATION_DIRECTORIES),
     demandOption: true
   })
@@ -22,14 +23,16 @@ const argv = yargs
     alias: 'd',
     description: 'Migration direction (up or down)',
     type: 'string',
-    default: 'up',
-    choices: DIRECTIONS
+    default: '',
+    choices: DIRECTIONS,
+    demandOption: true
   })
   .option('count', {
     alias: 'c',
     description: 'Number of migrations to run',
     type: 'number',
-    default: Infinity
+    default: 0,
+    demandOption: true
   })
   .help()
   .alias('help', 'h')
@@ -60,8 +63,10 @@ async function runMigration (schemaName, direction, count) {
     // Run migration
     await run(config);
     console.log(`Migration for schema '${schemaName}' completed successfully.`);
+    return true;
   } catch (error) {
-    throw new Error(`Migration failed: ${error.message}`);
+    console.error(`Migration failed: ${error.message}`);
+    return false;
   }
 }
 
@@ -95,16 +100,14 @@ function validateParams (params) {
 
 const { schema, direction, count } = argv;
 
-const s = (schema != null) && (typeof schema === 'string') ? schema : '';
-const d = (direction != null) && (typeof direction === 'string') ? direction : '';
-const c = (count != null) && (typeof count === 'number') && (count > 0) ? count : Infinity;
-
-if (validateParams({ s, d, c })) {
-  runMigration(s, d, c)
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error(error.message);
-      process.exit(1);
+if (validateParams({ schema, direction, count })) {
+  runMigration(schema, direction, count)
+    .then((success) => {
+      if (success) {
+        process.exit(0);
+      } else {
+        process.exit(1);
+      }
     });
 } else {
   yargs.showHelp();

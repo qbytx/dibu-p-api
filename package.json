@@ -7,22 +7,19 @@
   "scripts": {
     "test": "test",
     "start": "node ./src/server.js",
-    "migrate": "node ./src/migrations/run-migration.js",
+    "migrate": "node ./src/migrations/run.js",
 
-    "migrate:create:users": "node-pg-migrate -m ./src/migrations/migrations-user/",
-    "migrate:create:app": "node-pg-migrate -m ./src/migrations/migrations-app/",
+    "migrate:user:up": "npm run migrate -- --schema user --direction up --count 1",
+    "migrate:user:down": "npm run migrate -- --schema user --direction down --count 1",
 
-    "migrate:user:up": "npm run migrate -- --schema user --direction up",
-    "migrate:user:down": "npm run migrate -- --schema user --direction down",
-    
-    "migrate:app:up": "npm run migrate -- --schema app --direction up",
-    "migrate:app:down": "npm run migrate -- --schema app --direction down",
+    "migrate:app:up": "npm run migrate -- --schema app --direction up --count 1",
+    "migrate:app:down": "npm run migrate -- --schema app --direction down --count 1",
 
-    "migrate:user:up:1": "npm run migrate -- --schema user --direction up --count 1",
-    "migrate:user:down:1": "npm run migrate -- --schema user --direction down --count 1",
+    "migrate:user:up:infinite": "npm run migrate -- --schema user --direction up --count Infinity",
+    "migrate:user:down:infinite": "npm run migrate -- --schema user --direction down --count Infinity",
 
-    "migrate:app:up:1": "npm run migrate -- --schema app --direction up --count 1",
-    "migrate:app:down:1": "npm run migrate -- --schema app --direction down --count 1"
+    "migrate:app:up:infinite": "npm run migrate -- --schema app --direction up --count Infinity",
+    "migrate:app:down:infinite": "npm run migrate -- --schema app --direction down --count Infinity"
   },
   "author": "qbytx",
   "license": "ISC",
