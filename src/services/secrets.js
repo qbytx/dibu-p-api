@@ -1,8 +1,23 @@
 'use strict';
 
-const secrets = {};
+const secretsConfig = require('config').get('secrets');
+const logger = require('../utils/logger');
+const { isDefined } = require('../utils/params');
 
-const keys = {
+const secretsManager = {
+  secrets: {},
+  keys: 0
+};
+
+secretsManager.reset = () => {
+  secretsManager.keys = 0;
+};
+
+secretsManager.foundAll = (count) => {
+  return secretsManager.keys === count;
+};
+
+const SecretKeys = {
   pgConnectionString: 'pgConnectionString',
   pgPassword: 'pgPassword',
   pgHost: 'pgHost',
@@ -11,44 +26,76 @@ const keys = {
   pgUser: 'pgUser'
 };
 
-const secretsType = 'shared';
+const SecretNames = Object.freeze({
+  CONNECTION_STRING: 'SUPABASE_CONNECTION_STRING',
+  PASSWORD: 'SUPABASE_PASSWORD',
+  HOST: 'SUPABASE_HOST',
+  NAME: 'SUPABASE_NAME',
+  PORT: 'SUPABASE_PORT',
+  USER: 'SUPABASE_USER'
+});
+
+// Abstracted configuration retrieval
+const getConfiguration = (configSource) => {
+  const environment = configSource.DIBUMON_SECRETS_ENVIRONMENT ?? null;
+  const clientSecret = configSource.MACHINE0_IDENTITY_CLIENT_SECRET ?? null;
+  const clientId = configSource.MACHINE0_IDENTITY_CLIENT_ID ?? null;
+  const projectId = configSource.DIBUMON_SECRETS_PROJECT_ID ?? null;
+
+  if (!isDefined([environment, clientSecret, clientId, projectId])) {
+    logger.error('Missing or undefined configuration values for secrets manager');
+    return null;
+  }
+  return { environment, clientSecret, clientId, projectId };
+};
+
+const getFastifyConfiguration = (fastify) => {
+  if (fastify && typeof fastify?.config === 'object') {
+    const configuration = getConfiguration(fastify.config);
+    return configuration;
+  } else return null;
+};
+
+const getEnvConfiguration = () => {
+  return getConfiguration(process.env);
+};
+
+const importInfisicalSDK = async () => {
+  try {
+    return require('@infisical/sdk').InfisicalSDK;
+  } catch (err) {
+    logger.error('Error loading Infisical SDK:', err);
+    return null;
+  }
+};
 
 // Infisical migrated to v2 but has no changelog, consult github
-// swap out infisical in the future
+// swap out infisical in the future?
 // https://adamcoster.com/blog/commonjs-and-esm-importexport-compatibility-examples
-const loadSecrets = async (fastify) => {
-  let InfisicalSDK;
-  await (async () => {
-    try {
-      InfisicalSDK = require('@infisical/sdk').InfisicalSDK;
-    } catch (err) {
-      return err.code;
-    }
-  })();
-  const clientId = fastify.config.MACHINE0_IDENTITY_CLIENT_ID;
-  const clientSecret = fastify.config.MACHINE0_IDENTITY_CLIENT_SECRET;
-  const projectId = fastify.config.DIBUMON_SECRETS_PROJECT_ID;
-  const environment = fastify.config.DIBUMON_SECRETS_ENVIRONMENT;
 
-  // infiscal names
-  const nameSupabaseConnectionString = 'SUPABASE_CONNECTION_STRING';
-  const nameSupabasePassword = 'SUPABASE_PASSWORD';
-  const nameSupabaseHost = 'SUPABASE_HOST';
-  const nameSupabaseName = 'SUPABASE_NAME';
-  const nameSupabasePort = 'SUPABASE_PORT';
-  const nameSupabaseUser = 'SUPABASE_USER';
+const loadSecrets = async (configuration) => {
+  const InfisicalSDK = await importInfisicalSDK();
+
+  if (!isDefined([InfisicalSDK])) {
+    logger.error('Could not load Infiniscal Secrets Manager');
+    return false;
+  }
+
+  const { environment, clientSecret, clientId, projectId } = configuration;
 
   const secretsMap = new Map([
-    [nameSupabaseConnectionString, keys.pgConnectionString],
-    [nameSupabasePassword, keys.pgPassword],
-    [nameSupabaseHost, keys.pgHost],
-    [nameSupabaseName, keys.pgName],
-    [nameSupabasePort, keys.pgPort],
-    [nameSupabaseUser, keys.pgUser]
+    [SecretNames.CONNECTION_STRING, SecretKeys.pgConnectionString],
+    [SecretNames.PASSWORD, SecretKeys.pgPassword],
+    [SecretNames.HOST, SecretKeys.pgHost],
+    [SecretNames.NAME, SecretKeys.pgName],
+    [SecretNames.PORT, SecretKeys.pgPort],
+    [SecretNames.USER, SecretKeys.pgUser]
   ]);
 
-  const infiscalPathPostGres = '/pg';
+  const secretsPath = secretsConfig.pgPath;
+  const secretsType = secretsConfig.pgType;
 
+  // empty object is to remind me of options
   const client = new InfisicalSDK({});
 
   // Authenticate with Infisical
@@ -57,7 +104,8 @@ const loadSecrets = async (fastify) => {
     clientSecret
   });
 
-  let secretsLoaded = 0;
+  // reset manager
+  secretsManager.reset();
 
   if (client != null) {
     for (const [k, v] of secretsMap) {
@@ -65,19 +113,23 @@ const loadSecrets = async (fastify) => {
         environment,
         projectId,
         secretName: k,
-        secretPath: infiscalPathPostGres, // Optional unless secrets exist at path other than '\'
+        secretPath: secretsPath, // Optional unless secrets exist at path other than '\'
         type: secretsType // Optional
         // version: 1  // Optional
       });
       if (s != null) {
-        secrets[v] = s;
-        secretsLoaded += 1;
+        secretsManager.secrets[v] = s;
+        secretsManager.keys += 1;
       }
     }
   }
 
   // report success
-  return secretsLoaded === secretsMap.size;
+  return secretsManager.foundAll(secretsMap.size);
 };
 
-module.exports = { secrets, keys, loadSecrets };
+const getSecrets = () => {
+  return secretsManager?.secrets;
+};
+
+module.exports = { SecretKeys, loadSecrets, getSecrets, getEnvConfiguration, getFastifyConfiguration };

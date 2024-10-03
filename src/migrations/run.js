@@ -1,6 +1,7 @@
 const yargs = require('yargs');
 const { run } = require('node-pg-migrate');
-const { getDatabase } = require('../services/db/database');
+const { loadSecrets, getSecrets, getEnvConfiguration } = require('../services/secrets');
+const { connectDatabase, getDatabase } = require('../services/db/database');
 const { isDefined } = require('../utils/params');
 
 const DIRECTIONS = Object.freeze(['up', 'down']);
@@ -40,7 +41,12 @@ const argv = yargs
 
 async function runMigration (schemaName, direction, count) {
   try {
+    require('dotenv').config();
+    await loadSecrets(getEnvConfiguration());
+    await connectDatabase(getSecrets(), null);
+
     const db = getDatabase();
+
     if (db == null) {
       throw new Error('Failed to get database connection');
     }

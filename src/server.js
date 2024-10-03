@@ -13,7 +13,7 @@ const { loggingOptions } = require('./lib/logging.js');
 const { environmentOptions } = require('./lib/environment.js');
 
 // services
-const { secrets, loadSecrets } = require('./services/secrets.js');
+const { loadSecrets, getSecrets, getFastifyConfiguration } = require('./services/secrets.js');
 const { connectDatabase, linkDatabase } = require('./services/db/database');
 
 async function start () {
@@ -28,7 +28,7 @@ async function start () {
     await fastify.register(App);
 
     /**
-     * Setup hooks to services
+     *  Link fastify to db callbacks
      */
 
     linkDatabase(fastify);
@@ -47,8 +47,8 @@ async function start () {
     * Database
     */
 
-    await loadSecrets(fastify);
-    await connectDatabase(fastify, secrets);
+    await loadSecrets(getFastifyConfiguration(fastify));
+    await connectDatabase(getSecrets(), fastify);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
