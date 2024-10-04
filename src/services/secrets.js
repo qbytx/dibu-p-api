@@ -3,6 +3,7 @@ const { InfisicalSDK } = require('@infisical/sdk');
 const config = require('config');
 const logger = require('../utils/logger');
 
+// secretKeys do not refer to .env, but to the secrets manager store
 const secretsManager = {
   secrets: {},
   secretKeys: {
@@ -16,14 +17,15 @@ const secretsManager = {
   }
 };
 
+// this references .env / fastify.config
 const getConfiguration = (source) => ({
   environment: source.SECRETS_ENVIRONMENT,
   projectId: source.SECRETS_PROJECT_ID,
-  clientId: source.SECRETS_MACHINE0_CLIENT_ID,
-  clientSecret: source.SECRETS_MACHINE0_CLIENT_SECRET
+  clientId: source.SECRETS_MACHINE0_IDENTITY_CLIENT_ID,
+  clientSecret: source.SECRETS_MACHINE0_IDENTITY_CLIENT_SECRET
 });
 
-const loadSecrets = async (configuration) => {
+const initializeSecrets = async (configuration) => {
   if (!configuration) {
     logger.error('Missing configuration for secrets manager');
     return false;
@@ -46,26 +48,35 @@ const loadSecrets = async (configuration) => {
         secretPath: secretsConfig.pgPath,
         type: secretsConfig.pgType
       });
-      if (secret) {
-        secretsManager.secrets[key] = secret;
+      if (secret !== null && secret !== undefined) {
+        secretsManager.secrets[key] = secret.secretValue;
       }
     } catch (error) {
-      logger.error(`Failed to load secret ${secretName}:`, error);
+      logger.error(`Failed to initialize a secret: ${secretName}:`, error);
+      throw new Error();
     }
   }
 
-  return Object.keys(secretsManager.secrets).length === Object.keys(secretsManager.secretKeys).length;
+  return true;
 };
 
 const getSecrets = () => secretsManager.secrets;
 
-const getFastifyConfiguration = (fastify) => 
-  fastify && typeof fastify.config === 'object' ? getConfiguration(fastify.config) : null;
+const getFastifyConfiguration = (fastify) => {
+  const validFastify =
+  fastify !== null &&
+  fastify !== undefined &&
+  typeof fastify.config === 'object';
 
-const getEnvConfiguration = () => getConfiguration(process.env);
+  return validFastify ? getConfiguration(fastify.config) : null;
+};
+
+const getEnvConfiguration = () => {
+  return getConfiguration(process.env);
+};
 
 module.exports = {
-  loadSecrets,
+  initializeSecrets,
   getSecrets,
   getEnvConfiguration,
   getFastifyConfiguration
