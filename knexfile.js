@@ -9,7 +9,7 @@ const { initializeSecrets, getSecrets, getEnvConfiguration } = require('./src/se
 const s = {};
 const dbConfig = config.get('db');
 
-await (async () => {
+(async () => {
   await initializeSecrets(getEnvConfiguration());
   const secrets = getSecrets();
 
