@@ -33,7 +33,5 @@ exports.up = function (knex) {
 };
 
 exports.down = function (knex) {
-  return knex.schema.dropTable('users.users');
+  return knex.schema.dropTableIfExists('users');
 };
-
-exports.config = { transaction: false };
