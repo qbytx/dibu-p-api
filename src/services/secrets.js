@@ -23,7 +23,8 @@ const SecretKeys = {
   pgHost: 'pgHost',
   pgName: 'pgName',
   pgPort: 'pgPort',
-  pgUser: 'pgUser'
+  pgUser: 'pgUser',
+  pgCaFn: 'pgCaFn'
 };
 
 const SecretNames = Object.freeze({
@@ -32,7 +33,8 @@ const SecretNames = Object.freeze({
   HOST: 'SUPABASE_HOST',
   NAME: 'SUPABASE_NAME',
   PORT: 'SUPABASE_PORT',
-  USER: 'SUPABASE_USER'
+  USER: 'SUPABASE_USER',
+  CAFN: 'SUPABASE_CA_FILENAME'
 });
 
 // Abstracted configuration retrieval
@@ -89,7 +91,8 @@ const loadSecrets = async (configuration) => {
     [SecretNames.HOST, SecretKeys.pgHost],
     [SecretNames.NAME, SecretKeys.pgName],
     [SecretNames.PORT, SecretKeys.pgPort],
-    [SecretNames.USER, SecretKeys.pgUser]
+    [SecretNames.USER, SecretKeys.pgUser],
+    [SecretNames.CAFN, SecretKeys.pgCaFn]
   ]);
 
   const secretsPath = secretsConfig.pgPath;

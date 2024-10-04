@@ -12,6 +12,7 @@ const environmentSchema = S.object()
   .prop('NAME_SUPABASE_NAME', S.string().required())
   .prop('NAME_SUPABASE_PORT', S.string().required())
   .prop('NAME_SUPABASE_USER', S.string().required())
+  .prop('NAME_SUPABASE_CA_FILENAME', S.string().required())
   .prop('NODE_ENV', S.string().required().default('development'));
 
 const environmentOptions = {

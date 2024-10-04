@@ -1,5 +1,8 @@
 'use strict';
 
+const { readFileSync } = require('fs');
+const { resolve, join } = require('node:path');
+
 const logger = require('../../utils/logger');
 const databaseConfig = require('config').get('database');
 
@@ -60,13 +63,20 @@ const connectDatabase = async (secrets, fastify = null) => {
   }
 
   const cn = secrets.pgConnectionString.secretValue;
+  const cafn = secrets.pgCaFn.secretValue;
   const maxConnections = parseInt(databaseConfig.poolSize || 15, 10); // 10 is base
   const parsedCn = new URL(cn);
 
   try {
+    const sslConfig = {
+      rejectUnauthorized: true, // enforce SSL certificate validation
+      ca: readFileSync(resolve(join(__dirname, `../../config/certs/${cafn}`)))
+    };
+
     const config = {
       connectionString: cn,
-      max: maxConnections
+      max: maxConnections,
+      ssl: sslConfig
     };
 
     dbManager.db = pgp(config);

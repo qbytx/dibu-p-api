@@ -75,10 +75,12 @@ web_modules/
 # Ignore all files in the node-config src/config directory
 src/config/*
 # Ignore all files inside the certs directory
-/src/config/certs/*
+src/config/certs/*
 
-# But not the directory itself
+# But not these directory(s) 
 !src/config/.gitkeep
+!src/config/certs/
+!src/config/certs/.gitkeep
 
 # dotenv environment variable files
 .env
