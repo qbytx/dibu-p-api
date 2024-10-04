@@ -19,12 +19,9 @@ const onAfterCreate = (conn, done) => {
    * */
   logger.info('Connected to database');
   conn.query('SET timezone="UTC";', function (err) {
+    logger.info('Set timezone of conn to UTC');
     if (err) {
       done(err, conn);
-    } else {
-      conn.query('SELECT 1', function (err) {
-        done(err, conn);
-      });
     }
   });
 };
