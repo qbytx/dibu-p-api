@@ -7,13 +7,13 @@ const logger = require('../utils/logger');
 const secretsManager = {
   secrets: {},
   secretKeys: {
-    pgConnectionString: 'SUPABASE_CONNECTION_STRING',
-    pgPassword: 'SUPABASE_PASSWORD',
-    pgHost: 'SUPABASE_HOST',
-    pgName: 'SUPABASE_NAME',
-    pgPort: 'SUPABASE_PORT',
-    pgUser: 'SUPABASE_USER',
-    pgCaFn: 'SUPABASE_CA_FILENAME'
+    Password: 'SUPABASE_PASSWORD',
+    Host: 'SUPABASE_HOST',
+    Name: 'SUPABASE_NAME',
+    Port: 'SUPABASE_PORT',
+    Role: 'SUPABASE_ROLE',
+    RefId: 'SUPABASE_REFERENCE_ID',
+    CaFn: 'SUPABASE_CA_FILENAME'
   }
 };
 

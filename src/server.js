@@ -37,7 +37,7 @@ async function start () {
      * Start Server
      */
 
-    const port = config.get('server').port;
+    const port = config.get('server')?.port || 4000;
     await fastify.listen({ port });
     fastify.log.info(`Server listening on port ${port}`);
 
