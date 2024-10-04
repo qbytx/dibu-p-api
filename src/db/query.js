@@ -1,4 +1,4 @@
-const db = require('../../services/db/database');
+const db = require('../services/db/database');
 const queries = require('./query-strings');
 
 // Function to create a user

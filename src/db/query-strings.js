@@ -1,4 +1,4 @@
-const { isDefined } = require('../../utils/params');
+const { isDefined } = require('../utils/params');
 
 const throwUndefinedError = (index) => {
   throw new Error('critical error: undefined value in query string, exiting...');

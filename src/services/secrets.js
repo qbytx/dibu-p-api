@@ -7,13 +7,13 @@ const logger = require('../utils/logger');
 const secretsManager = {
   secrets: {},
   secretKeys: {
-    Password: 'SUPABASE_PASSWORD',
-    Host: 'SUPABASE_HOST',
-    Name: 'SUPABASE_NAME',
-    Port: 'SUPABASE_PORT',
-    Role: 'SUPABASE_ROLE',
-    RefId: 'SUPABASE_REFERENCE_ID',
-    CaFn: 'SUPABASE_CA_FILENAME'
+    caFilename: 'SUPABASE_CA_FILENAME',
+    password: 'SUPABASE_PASSWORD',
+    host: 'SUPABASE_HOST',
+    name: 'SUPABASE_NAME',
+    port: 'SUPABASE_PORT',
+    role: 'SUPABASE_ROLE',
+    refId: 'SUPABASE_REFERENCE_ID'
   }
 };
 
