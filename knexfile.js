@@ -54,10 +54,10 @@ const knexConfig = {
     }
   },
   migrations: {
-    tableName: 'migrations.knex_migrations',
+    tableName: 'pgmigrations',
     directory: './src/migrations'
   },
-  searchPath: ['users', 'app'],
+  searchPath: ['users', 'app', 'migrations'],
   acquireConnectionTimeout: 10000,
   compileSqlOnError: false,
   log: {
