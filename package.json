@@ -6,7 +6,13 @@
   "main": "server.js",
   "scripts": {
     "test": "test",
-    "start": "node ./src/server.js"
+    "start": "node ./src/server.js",
+    "migrate:latest": "knex migrate:latest --env development",
+    "migrate:rollback": "knex migrate:rollback --env development",
+    "migrate:latest:staging": "knex migrate:latest --env staging",
+    "migrate:rollback:staging": "knex migrate:rollback --env staging",
+    "migrate:latest:production": "knex migrate:latest --env production",
+    "migrate:rollback:production": "knex migrate:rollback --env production"
   },
   "author": "qbytx",
   "license": "ISC",

@@ -27,6 +27,22 @@ if ((s?.host === null) || (s?.host === undefined)) {
   process.exit(1);
 }
 
+function onAfterCreate (conn, done) {
+  /**
+   * [ Note: This fn assumes the 'pg' connection API ]
+   *
+   * ['SET timezone="UTC";']
+   * This command sets the timezone of the current database connection to UTC.
+   * This is crucial for applications that need consistent time handling.
+   * */
+  logger.info('Connected to database');
+  conn.query('SET timezone="UTC";', function (err) {
+    if (err) {
+      done(err, conn);
+    }
+  });
+}
+
 const connection = {
   host: s.host,
   port: s.port,
@@ -66,22 +82,6 @@ const log = {
   debug (message) {
     logger.debug(message);
   }
-};
-
-const onAfterCreate = (conn, done) => {
-  /**
-   * [ Note: This fn assumes the 'pg' connection API ]
-   *
-   * ['SET timezone="UTC";']
-   * This command sets the timezone of the current database connection to UTC.
-   * This is crucial for applications that need consistent time handling.
-   * */
-  logger.info('Connected to database');
-  conn.query('SET timezone="UTC";', function (err) {
-    if (err) {
-      done(err, conn);
-    }
-  });
 };
 
 const knexConfig = {
