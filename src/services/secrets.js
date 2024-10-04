@@ -1,138 +1,72 @@
 'use strict';
-
-const secretsConfig = require('config').get('secrets');
+const { InfisicalSDK } = require('@infisical/sdk');
+const config = require('config');
 const logger = require('../utils/logger');
-const { isDefined } = require('../utils/params');
 
 const secretsManager = {
   secrets: {},
-  keys: 0
+  secretKeys: {
+    pgConnectionString: 'SUPABASE_CONNECTION_STRING',
+    pgPassword: 'SUPABASE_PASSWORD',
+    pgHost: 'SUPABASE_HOST',
+    pgName: 'SUPABASE_NAME',
+    pgPort: 'SUPABASE_PORT',
+    pgUser: 'SUPABASE_USER',
+    pgCaFn: 'SUPABASE_CA_FILENAME'
+  }
 };
 
-secretsManager.reset = () => {
-  secretsManager.keys = 0;
-};
-
-secretsManager.foundAll = (count) => {
-  return secretsManager.keys === count;
-};
-
-const SecretKeys = {
-  pgConnectionString: 'pgConnectionString',
-  pgPassword: 'pgPassword',
-  pgHost: 'pgHost',
-  pgName: 'pgName',
-  pgPort: 'pgPort',
-  pgUser: 'pgUser',
-  pgCaFn: 'pgCaFn'
-};
-
-const SecretNames = Object.freeze({
-  CONNECTION_STRING: 'SUPABASE_CONNECTION_STRING',
-  PASSWORD: 'SUPABASE_PASSWORD',
-  HOST: 'SUPABASE_HOST',
-  NAME: 'SUPABASE_NAME',
-  PORT: 'SUPABASE_PORT',
-  USER: 'SUPABASE_USER',
-  CAFN: 'SUPABASE_CA_FILENAME'
+const getConfiguration = (source) => ({
+  environment: source.SECRETS_ENVIRONMENT,
+  projectId: source.SECRETS_PROJECT_ID,
+  clientId: source.SECRETS_MACHINE0_CLIENT_ID,
+  clientSecret: source.SECRETS_MACHINE0_CLIENT_SECRET
 });
 
-// Abstracted configuration retrieval
-const getConfiguration = (configSource) => {
-  const environment = configSource.DIBUMON_SECRETS_ENVIRONMENT ?? null;
-  const clientSecret = configSource.MACHINE0_IDENTITY_CLIENT_SECRET ?? null;
-  const clientId = configSource.MACHINE0_IDENTITY_CLIENT_ID ?? null;
-  const projectId = configSource.DIBUMON_SECRETS_PROJECT_ID ?? null;
-
-  if (!isDefined([environment, clientSecret, clientId, projectId])) {
-    logger.error('Missing or undefined configuration values for secrets manager');
-    return null;
-  }
-  return { environment, clientSecret, clientId, projectId };
-};
-
-const getFastifyConfiguration = (fastify) => {
-  if (fastify && typeof fastify?.config === 'object') {
-    const configuration = getConfiguration(fastify.config);
-    return configuration;
-  } else return null;
-};
-
-const getEnvConfiguration = () => {
-  return getConfiguration(process.env);
-};
-
-const importInfisicalSDK = async () => {
-  try {
-    return require('@infisical/sdk').InfisicalSDK;
-  } catch (err) {
-    logger.error('Error loading Infisical SDK:', err);
-    return null;
-  }
-};
-
-// Infisical migrated to v2 but has no changelog, consult github
-// swap out infisical in the future?
-// https://adamcoster.com/blog/commonjs-and-esm-importexport-compatibility-examples
-
 const loadSecrets = async (configuration) => {
-  const InfisicalSDK = await importInfisicalSDK();
-
-  if (!isDefined([InfisicalSDK])) {
-    logger.error('Could not load Infiniscal Secrets Manager');
+  if (!configuration) {
+    logger.error('Missing configuration for secrets manager');
     return false;
   }
 
-  const { environment, clientSecret, clientId, projectId } = configuration;
-
-  const secretsMap = new Map([
-    [SecretNames.CONNECTION_STRING, SecretKeys.pgConnectionString],
-    [SecretNames.PASSWORD, SecretKeys.pgPassword],
-    [SecretNames.HOST, SecretKeys.pgHost],
-    [SecretNames.NAME, SecretKeys.pgName],
-    [SecretNames.PORT, SecretKeys.pgPort],
-    [SecretNames.USER, SecretKeys.pgUser],
-    [SecretNames.CAFN, SecretKeys.pgCaFn]
-  ]);
-
-  const secretsPath = secretsConfig.pgPath;
-  const secretsType = secretsConfig.pgType;
-
-  // empty object is to remind me of options
   const client = new InfisicalSDK({});
-
-  // Authenticate with Infisical
   await client.auth().universalAuth.login({
-    clientId,
-    clientSecret
+    clientId: configuration.clientId,
+    clientSecret: configuration.clientSecret
   });
 
-  // reset manager
-  secretsManager.reset();
+  const secretsConfig = config.get('secrets');
 
-  if (client != null) {
-    for (const [k, v] of secretsMap) {
-      const s = await client.secrets().getSecret({
-        environment,
-        projectId,
-        secretName: k,
-        secretPath: secretsPath, // Optional unless secrets exist at path other than '\'
-        type: secretsType // Optional
-        // version: 1  // Optional
+  for (const [key, secretName] of Object.entries(secretsManager.secretKeys)) {
+    try {
+      const secret = await client.secrets().getSecret({
+        environment: configuration.environment,
+        projectId: configuration.projectId,
+        secretName,
+        secretPath: secretsConfig.pgPath,
+        type: secretsConfig.pgType
       });
-      if (s != null) {
-        secretsManager.secrets[v] = s;
-        secretsManager.keys += 1;
+      if (secret) {
+        secretsManager.secrets[key] = secret;
       }
+    } catch (error) {
+      logger.error(`Failed to load secret ${secretName}:`, error);
     }
   }
 
-  // report success
-  return secretsManager.foundAll(secretsMap.size);
+  return Object.keys(secretsManager.secrets).length === Object.keys(secretsManager.secretKeys).length;
 };
 
-const getSecrets = () => {
-  return secretsManager?.secrets;
-};
+const getSecrets = () => secretsManager.secrets;
 
-module.exports = { SecretKeys, loadSecrets, getSecrets, getEnvConfiguration, getFastifyConfiguration };
+const getFastifyConfiguration = (fastify) => 
+  fastify && typeof fastify.config === 'object' ? getConfiguration(fastify.config) : null;
+
+const getEnvConfiguration = () => getConfiguration(process.env);
+
+module.exports = {
+  loadSecrets,
+  getSecrets,
+  getEnvConfiguration,
+  getFastifyConfiguration
+};
