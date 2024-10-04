@@ -1,5 +1,5 @@
 exports.up = function (knex) {
-  return knex.schema.createTable('users.users', function (table) {
+  return knex.schema.createTable('users', function (table) {
     table.uuid('user_id').primary();
     table.string('username').notNullable().unique();
     table.string('email').notNullable().unique();
@@ -35,3 +35,5 @@ exports.up = function (knex) {
 exports.down = function (knex) {
   return knex.schema.dropTable('users.users');
 };
+
+exports.config = { transaction: false };
