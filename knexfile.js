@@ -1,4 +1,4 @@
-require('dotenve').config();
+require('dotenv').config();
 const config = require('config');
 const logger = require('./src/utils/logger');
 const { pgDatabaseUser } = require('./src/db/databaseUtilities');
