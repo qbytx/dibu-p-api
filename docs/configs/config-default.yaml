@@ -19,4 +19,9 @@ api:
 secrets:
   pgPath: '/pg'
   pgType: 'shared'
-  jwtSecret: 'FAKE_895b669e8e4aefa049e8-24e4-4b13-8bfc-01948534a23f'
+
+auth:
+  appName = 'Doodlemon'
+  apiDomain = 'https://api.doodlemon.lol'
+  websiteDomain = 'https://app.doodlemon.lol'
+  authBasePath = '/auth/'
