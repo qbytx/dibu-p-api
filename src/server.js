@@ -1,11 +1,11 @@
 'use strict';
-
 require('dotenv').config();
 require('make-promises-safe');
 const config = require('config');
 const Fastify = require('fastify');
 const env = require('@fastify/env');
 const App = require('./app.js');
+const Jwt = require('@fastify/jwt');
 
 // config
 const { loadFilePaths } = require('./lib/filePaths.js');
@@ -24,9 +24,11 @@ async function start () {
 
   try {
     await loadFilePaths(fastify);
+    await fastify.register(Jwt, {
+      secret: config.get('secrets').jwtSecret
+    });
     await fastify.register(env, environmentOptions);
     await fastify.register(App);
-
     /**
      *  Link fastify to db callbacks
      */
@@ -41,6 +43,15 @@ async function start () {
     await fastify.listen({ port });
     fastify.log.info(`Server listening on port ${port}`);
 
+    // graceful shutdown
+    const listeners = ['SIGINT', 'SIGTERM'];
+
+    listeners.forEach((signal) => {
+      process.on(signal, async () => {
+        await fastify.close();
+        process.exit(0);
+      });
+    });
     /**
     * Connect to services:
     * Secrets

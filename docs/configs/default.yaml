@@ -1,0 +1,22 @@
+environment:
+  mode: 'development'
+
+logging:
+  level: 'info'
+
+server:
+  port: 4002
+
+db:
+  driver: 'pg'
+  maxPool: 30
+  minPool: 0
+
+api:
+  version: 0.0.1
+  name: 'v1'
+
+secrets:
+  pgPath: '/pg'
+  pgType: 'shared'
+  jwtSecret: 'FAKE_895b669e8e4aefa049e8-24e4-4b13-8bfc-01948534a23f'

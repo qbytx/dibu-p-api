@@ -22,18 +22,49 @@ function getLoginSchemaId () {
 }
 
 // Function to convert Joi schema to JSON Schema
-function joiToJsonSchema (joiSchema) {
-  const { error, value } = joiSchema.validate({});
-  if (error || value == null) throw new Error('Joi schema is invalid.');
+// function joiToJsonSchema (joiSchema) {
+//   const { error, value } = joiSchema.validate({});
+//   if (error || value == null) throw new Error('Joi schema is invalid.');
+
+//   return {
+//     $id: getLoginSchemaId(),
+//     type: 'object',
+//     properties: {
+//       username: { type: 'string' },
+//       password: { type: 'string' }
+//     },
+//     required: ['username', 'password']
+//   };
+// }
+
+// Function to convert Joi schema to JSON Schema
+function joiToJsonSchema(joiSchema) {
+  // Convert Joi schema to JSON Schema manually or with a library.
+  // In this case, we will extract relevant properties from the Joi schema.
+  
+  // This is a simplified conversion. For complex schemas, consider using a dedicated library.
+  const jsonSchema = {
+    type: 'object',
+    properties: {},
+    required: []
+  };
+
+  for (const key in joiSchema.describe().keys) {
+    const keyDescription = joiSchema.describe().keys[key];
+    
+    jsonSchema.properties[key] = {
+      type: keyDescription.type,
+      // Handle Joi validation constraints if needed
+    };
+
+    if (keyDescription.flags && keyDescription.flags.presence === 'required') {
+      jsonSchema.required.push(key);
+    }
+  }
 
   return {
     $id: getLoginSchemaId(),
-    type: 'object',
-    properties: {
-      username: { type: 'string' },
-      password: { type: 'string' }
-    },
-    required: ['username', 'password']
+    ...jsonSchema,
   };
 }
 
