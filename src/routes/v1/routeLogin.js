@@ -1,7 +1,10 @@
 'use strict';
 
+const logger = require('../../utils/logger');
 const Joi = require('joi');
-const bcrypt = require('bcrypt');
+const ROUTES = require('../../lib/routes');
+
+// const bcrypt = require('bcrypt');
 
 const loginSchema = Joi.object({
   username: Joi.string().required(),
@@ -9,13 +12,14 @@ const loginSchema = Joi.object({
 });
 
 module.exports = async function (fastify, opts) {
-  fastify.post('/login', {
+  fastify.post(ROUTES.LOGIN, {
     schema: {
       body: loginSchema
     }
   }, async (request, reply) => {
     try {
       const { username, password } = request.body;
+      logger.info({ username, password });
 
       // TODO: Retrieve user from database
       // const user = await fastify.db.getUserByUsername(username);
@@ -25,6 +29,7 @@ module.exports = async function (fastify, opts) {
 
       // TODO: Compare passwords
       // const isPasswordValid = await bcrypt.compare(password, user.hashedPassword);
+
       // if (!isPasswordValid) {
       //   throw new Error('Invalid username or password');
       // }
