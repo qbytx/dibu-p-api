@@ -4,6 +4,7 @@ require('make-promises-safe');
 const config = require('config');
 const Fastify = require('fastify');
 const env = require('@fastify/env');
+const Auth = require('./auth.js');
 const App = require('./app.js');
 const Jwt = require('@fastify/jwt');
 
@@ -23,6 +24,8 @@ async function start () {
   });
 
   try {
+    Auth.init(fastify);
+
     await loadFilePaths(fastify);
     await fastify.register(Jwt, {
       secret: config.get('secrets').jwtSecret
