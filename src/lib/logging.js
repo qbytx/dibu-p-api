@@ -12,15 +12,30 @@ const loggingOptions = {
       }
     },
     serializers: {
-    // Custom serializer to include the line number in the log
+      // Custom serializer for request logging
       req: (req) => {
         return {
           method: req.method,
           url: req.url,
-          headers: req.headers,
+          headers: req.headers
           // Add more fields as needed
-          line: (new Error()).stack.split('\n')[2] // Get the line number
         };
+      }
+    },
+    formatters: {
+      log (object) {
+        // Extract the stack trace
+        const stack = new Error().stack;
+        const lineInfo = stack.split('\n')[3].trim(); // Adjust index based on the depth of your stack
+        const fileInfo = lineInfo.match(/\((.*?):(\d+):(\d+)\)/); // Regex to extract file name and line number
+
+        if (fileInfo) {
+          const [_, file, line] = fileInfo; // Destructure the matched groups
+          object.file = file;
+          object.line = line;
+        }
+
+        return object; // Return the modified object
       }
     }
   }

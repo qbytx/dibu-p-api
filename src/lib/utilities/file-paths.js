@@ -10,8 +10,8 @@ const API_VERSION = config.get('api').name;
 const ROOT_DIR = resolve(__dirname, '../../../');
 
 const FILEKEYS = Object.freeze({
-    FILE_INDEX: 'index',
-    FILE_404: '404'
+  FILE_INDEX: 'index',
+  FILE_404: '404'
 });
 
 /**
@@ -43,32 +43,14 @@ const fileSchema = Joi.object({
 /**
  * Utils
  */
-/**
- * Gets a Directory
- * @param {string} relPath
- * @returns {string}
- */
 const getDir = (relPath) => {
   return join(ROOT_DIR, relPath);
 };
 
-/**
- * Gets a Filepath
- * @param {string} relPath
- * @param {string} fileName
- * @returns {string}
- */
 const getFp = (relPath, fileName) => {
   return join(ROOT_DIR, relPath, fileName);
 };
 
-
-/**
- * Converts an array of validated files to an object and handles errors
- * @param {Array} files - Array of Joi validation results
- * @param {Object} fastify - Fastify instance for logging
- * @returns {Object} - Object with fileKey as keys and file info as values
- */
 function convertFilesToObject (files, fastify) {
   const result = {};
   const errors = [];
@@ -76,6 +58,10 @@ function convertFilesToObject (files, fastify) {
   files.forEach((validationResult, index) => {
     if (validationResult.error) {
       errors.push(`Validation error in file ${index}: ${validationResult.error.message}`);
+      fastify.log.error(`File validation error: ${validationResult.error.message}`, {
+        fileIndex: index,
+        fileData: validationResult.value // Log the input data for context
+      });
     } else {
       const { fileKey, fileName, filePath } = validationResult.value;
       result[fileKey] = { fileName, filePath };
@@ -91,9 +77,7 @@ function convertFilesToObject (files, fastify) {
 }
 
 async function filePaths (fastify, options) {
-  /**
-   *  PUBLIC FILES
-   */
+  // PUBLIC FILES
   const filesPublic = [
     fileSchema.validate({
       fileKey: FILEKEYS.FILE_INDEX,
@@ -113,13 +97,18 @@ async function filePaths (fastify, options) {
       css: getDir('./src/public/css'),
       img: getDir('./src/public/img')
     },
-    files: convertFilesToObject(filesPublic)
-  }).value;
+    files: convertFilesToObject(filesPublic, fastify) // Pass fastify for logging
+  });
 
-  /**
-   *  SOURCE FILES
-   */
-  const filesSource = [];
+  if (pathPublic.error) {
+    fastify.log.error(`Public path validation error: ${pathPublic.error.message}`, {
+      value: pathPublic.value // Log the value attempted for validation
+    });
+    throw new Error('Public path validation failed. Check logs for details.');
+  }
+
+  // SOURCE FILES
+  const filesSource = []; // Assuming you will fill this in
 
   const pathSource = pathSchema.validate({
     root: getDir('./src'),
@@ -132,17 +121,31 @@ async function filePaths (fastify, options) {
       templates: getDir('./src/data/templates/'),
       api: join(getDir(`./src/routes/${API_VERSION}/`))
     },
-    files: convertFilesToObject(filesSource);
-  }).value;
+    files: convertFilesToObject(filesSource, fastify) // Pass fastify for logging
+  });
+
+  if (pathSource.error) {
+    fastify.log.error(`Source path validation error: ${pathSource.error.message}`, {
+      value: pathSource.value // Log the value attempted for validation
+    });
+    throw new Error('Source path validation failed. Check logs for details.');
+  }
 
   // Combine validated
-  const { value } = FilepathsSchema.validate({
+  const { error, value } = FilepathsSchema.validate({
     public: pathPublic.value,
     source: pathSource.value,
     FILEKEYS
   });
 
+  if (error) {
+    fastify.log.error(`Filepaths schema validation error: ${error.message}`, {
+      value // Log the value attempted for validation
+    });
+    throw new Error('Invalid filePaths structure. Check logs for details.');
+  }
+
   fastify.decorate(PLUGINS.filePaths.options.name, value);
 }
 
-module.exports = fp(filePaths, PLUGINS.filePaths.options.name);
+module.exports = fp(filePaths, PLUGINS.filePaths.options);
