@@ -4,6 +4,7 @@ const fp = require('fastify-plugin');
 const RateLimit = require('@fastify/rate-limit');
 const page429 = require('../data/templates/page429');
 const { LRUCache } = require('lru-cache');
+const PLUGINS = require('../data/json/plugins.json');
 
 /**
  * NOTE TO EVA / SELF: USING LRU CACHE
@@ -101,7 +102,4 @@ async function rateLimit (fastify, opts) {
   });
 }
 
-module.exports = fp(rateLimit, {
-  name: 'rateLimit',
-  dependencies: []
-});
+module.exports = fp(rateLimit, PLUGINS.rateLimit.options);

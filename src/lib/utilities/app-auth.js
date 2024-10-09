@@ -7,6 +7,17 @@ const ThirdParty = require('supertokens-node/recipe/thirdparty');
 const Dashboard = require('supertokens-node/recipe/dashboard');
 const config = require('config');
 const fp = require('fastify-plugin');
+const PLUGINS = require('../../data/json/plugins.json');
+
+const initialized = false;
+
+const auth = {
+  client: null,
+  initialized () {
+    const value = initialized;
+    return value;
+  }
+};
 
 async function appAuth (fastify, options) {
   const authConfig = config.get('auth');
@@ -68,10 +79,12 @@ async function appAuth (fastify, options) {
       Session.init() // Initializes session features
     ]
   });
+
+  /**
+   * @ Decorate
+   */
+  fastify.decorate(PLUGINS.appAuth.options.name, auth);
 }
 
 // Export the plugin using fastify-plugin
-module.exports = fp(appAuth, {
-  name: 'appAuth',
-  dependencies: [] // If there are dependencies, they can be added here
-});
+module.exports = fp(appAuth, PLUGINS.appAuth.options);

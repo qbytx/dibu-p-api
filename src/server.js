@@ -2,12 +2,20 @@
 require('dotenv').config();
 require('make-promises-safe');
 const Fastify = require('fastify');
-const env = require('@fastify/env');
+const Env = require('@fastify/env');
 const Auth = require('./auth.js');
-const App = require('./app.js');
+// const App = require('../docs/app.js');
 const Jwt = require('@fastify/jwt');
-const FilePaths = require('./plugins/file-paths.js');
-const FileCache = require('./plugins/file-cache.js');
+const Autoload = require('@fastify/autoload');
+
+const DIRECTORIES = require('./data/json/directories.json');
+const FILES = require('./data/json/files.json');
+/**
+ * PLUGINS
+ */
+// LIB
+const filePaths = require('./lib/utilities/file-paths.js');
+const fileCache = require('./lib/utilities/file-cache.js');
 
 // config
 const config = require('config');
@@ -31,8 +39,8 @@ async function start () {
     /**
      * [FILESYSTEM INIT]
      */
-    await fastify.register(FilePaths);
-    await fastify.register(FileCache);
+    await fastify.register(filePaths);
+    await fastify.register(fileCache);
 
     /**
      * [AUTH INIT]
@@ -45,12 +53,20 @@ async function start () {
     /**
      * [ENVIRONMENT]
      */
-    await fastify.register(env, environmentOptions);
+    await fastify.register(Env, environmentOptions);
 
-    /**
-     * [APPLICATION]
-    */
-    await fastify.register(App);
+    // load plugins
+    await fastify.register(Autoload, {
+      dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirPlugins],
+      options: {}
+    });
+
+    // load routes
+    await fastify.register(Autoload, {
+      dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirRoutes],
+      dirNameRoutePrefix: false,
+      options: {}
+    });
 
     /**
      * [SERVER INIT]

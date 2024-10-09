@@ -2,6 +2,7 @@
 const { join, resolve } = require('node:path');
 const fp = require('fastify-plugin');
 const config = require('config');
+const PLUGINS = require('../../data/json/plugins.json');
 
 // Constants
 const API_VERSION = config.get('api').name;
@@ -24,9 +25,8 @@ const onError = (err, source) => {
 /**
  * Files & Directories
  */
-
-const FILES = require('../data/json/files.json');
-const DIRECTORIES = require('../data/json/directories.json');
+const FILES = require('../../data/json/files.json');
+const DIRECTORIES = require('../../data/json/directories.json');
 
 // Path mappings
 const publicFiles = new Map([
@@ -50,9 +50,19 @@ const sourceDirectories = new Map([
 ]);
 
 // Initialize paths object
-const filePaths = {
-  public: { path: publicPath, pathPrefix: '/', directories: {}, files: {} },
-  src: { path: sourcePath, pathPrefix: './src/', directories: {}, files: {} }
+const _paths = {
+  public: {
+    path: publicPath,
+    pathPrefix: '/',
+    directories: {},
+    files: {}
+  },
+  src: {
+    path: sourcePath,
+    pathPrefix: './src/',
+    directories: {},
+    files: {}
+  }
 };
 
 /**
@@ -90,30 +100,21 @@ function createOptions (basePath, pathMap, targetObject, pathType) {
   };
 }
 
-async function fileCache (fastify, options) {
+async function filePaths (fastify, options) {
   // Resolve and add public files
-  resolveAndAddPath(createOptions(publicPath, publicFiles, filePaths.public.files, 'public-file'), fastify);
+  resolveAndAddPath(createOptions(publicPath, publicFiles, _paths.public.files, 'public-file'), fastify);
 
   // Resolve and add public directories
-  resolveAndAddPath(createOptions(publicPath, publicDirectories, filePaths.public.directories, 'public-directory'), fastify);
+  resolveAndAddPath(createOptions(publicPath, publicDirectories, _paths.public.directories, 'public-directory'), fastify);
 
   // Resolve and add source directories
-  resolveAndAddPath(createOptions(sourcePath, sourceDirectories, filePaths.src.directories, 'source-directory'), fastify);
+  resolveAndAddPath(createOptions(sourcePath, sourceDirectories, _paths.src.directories, 'source-directory'), fastify);
 
   /**
    * @ Decorate
    */
   // Decorate fastify instance with filePaths
-  fastify.decorate('filePaths', filePaths);
+  fastify.decorate(PLUGINS.filePaths.options.name, _paths);
 }
 
-module.exports = fp(fileCache, {
-  name: 'filePaths',
-  dependencies: [] // If there are dependencies, they can be added here
-});
-
-// module.exports = {
-//   filePaths,
-//   FILES,
-//   DIRECTORIES
-// };
+module.exports = fp(filePaths, PLUGINS.filePaths.options);
