@@ -4,6 +4,7 @@ const fp = require('fastify-plugin');
 const RateLimit = require('@fastify/rate-limit');
 const page429 = require('../data/templates/page429');
 const { LRUCache } = require('lru-cache');
+const PLUGINS = require('../data/json/plugins.json');
 
 /**
  * NOTE TO EVA / SELF: USING LRU CACHE
@@ -97,11 +98,8 @@ async function rateLimit (fastify, opts) {
     allowList: ['127.0.0.1'], // no rate limit on localhost
     store: LRUStore,
     timeWindow: '1 minute',
-    max: 100
+    max: 50
   });
 }
 
-module.exports = fp(rateLimit, {
-  name: 'rateLimit',
-  dependencies: []
-});
+module.exports = fp(rateLimit, PLUGINS.rateLimit.options);

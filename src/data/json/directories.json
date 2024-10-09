@@ -1,0 +1,11 @@
+{
+    "publicDirCss": "css",
+    "publicDirImg": "img",
+    "srcDirPlugins": "plugins",
+    "srcDirRoutes": "routes",
+    "srcDirData": "data",
+    "srcDirJson": "json",
+    "srcDirModels": "models",
+    "srcDirTemplates": "templates",
+    "srcDirApi": "API_VERSION"
+}

@@ -2,58 +2,98 @@
 
 require('dotenv').config();
 require('make-promises-safe');
-const config = require('config');
-const Fastify = require('fastify');
-const env = require('@fastify/env');
-const App = require('./app.js');
 
-// config
-const { loadFilePaths } = require('./lib/filePaths.js');
+const Fastify = require('fastify');
+const Env = require('@fastify/env');
+const Autoload = require('@fastify/autoload');
+
+// Utilities
+const filePaths = require('./lib/utilities/file-paths.js');
+const fileCache = require('./lib/utilities/file-cache.js');
+
+// Configuration
+const configServer = require('config').get('server');
+
+// Environment
+const DIRECTORIES = require('./data/json/directories.json');
 const { loggingOptions } = require('./lib/logging.js');
 const { environmentOptions } = require('./lib/environment.js');
 
-// services
+// Database & Services
 const { initializeSecrets, getSecrets, getFastifyConfiguration } = require('./services/secrets.js');
 const { connectDatabasePool } = require('./db/database.js');
 
-async function start () {
+async function buildFastify () {
   const fastify = Fastify({
     trustProxy: true,
     logger: loggingOptions.logger
   });
 
+  // Environment
+  await fastify.register(Env, environmentOptions);
+
+  // Filesystem init
+  await fastify.register(filePaths);
+  await fastify.register(fileCache);
+
+  // Plugins
+  await fastify.register(Autoload, {
+    dir: fastify.filePaths.source.directories[DIRECTORIES.srcDirPlugins],
+    options: {}
+  });
+
+  // Routes
+  await fastify.register(Autoload, {
+    dir: fastify.filePaths.source.directories[DIRECTORIES.srcDirRoutes],
+    dirNameRoutePrefix: false,
+    options: {}
+  });
+
+  return fastify;
+}
+
+async function start (fastify) {
   try {
-    await loadFilePaths(fastify);
-    await fastify.register(env, environmentOptions);
-    await fastify.register(App);
-
-    /**
-     *  Link fastify to db callbacks
-     */
-
-    // linkDatabase(fastify);
-
-    /**
-     * Start Server
-     */
-
-    const port = config.get('server')?.port || 4000;
-    await fastify.listen({ port });
+    // Server init
+    const port = configServer?.port || 4000;
+    await fastify.listen({ port, host: '0.0.0.0' });
     fastify.log.info(`Server listening on port ${port}`);
 
-    /**
-    * Connect to services:
-    * Secrets
-    * Database
-    */
-
+    // Database & Services
     await initializeSecrets(getFastifyConfiguration(fastify));
     await connectDatabasePool(getSecrets());
-    // await connectDatabase(getSecrets(), fastify);
   } catch (err) {
-    fastify.log.error(err);
+    if (fastify) {
+      fastify.log.error(err);
+    } else {
+      console.error(err);
+    }
     process.exit(1);
   }
 }
 
-start();
+function setupGracefulShutdown (fastify) {
+  const listeners = ['SIGINT', 'SIGTERM'];
+  listeners.forEach((signal) => {
+    process.on(signal, async () => {
+      fastify.log.warn(`${signal} received. Shutting down gracefully...`);
+      try {
+        await fastify.close();
+        fastify.log.info('Server closed successfully');
+        process.exit(0);
+      } catch (err) {
+        fastify.log.error('Error during shutdown:', err);
+        process.exit(1);
+      }
+    });
+  });
+}
+
+async function run () {
+  const fastify = await buildFastify();
+  setupGracefulShutdown(fastify);
+  await start(fastify);
+}
+
+// start server
+run();

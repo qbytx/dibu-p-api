@@ -7,10 +7,10 @@ const Helmet = require('@fastify/helmet');
 const Static = require('@fastify/static');
 const Cors = require('@fastify/cors');
 
-const { fileCache, loadFileCache } = require('./lib/fileCache');
-const { filePaths, FILES, DIRECTORIES } = require('./lib/filePaths');
+const FILES = require('../src/data/json/files.json');
+const DIRECTORIES = require('../src/data/json/directories.json');
 
-module.exports = async function (fastify, opts) {
+module.exports = async function (fastify, options) {
   // `fastify-sensible` adds many  small utilities, such as nice http errors.
   await fastify.register(Sensible);
 
@@ -72,18 +72,21 @@ module.exports = async function (fastify, opts) {
     }
   });
 
+  /**
+   * Static Assets
+   */
   /* Static */
   await fastify.register(Static, {
-    root: filePaths.public.path,
-    prefix: filePaths.public.pathPrefix
+    root: fastify.filePaths.public.path,
+    prefix: fastify.filePaths.public.pathPrefix
   });
 
-  /* Load files into memory */
-  await loadFileCache(fastify);
-
+  /**
+   * 404 - Page Not Found
+   */
   /* not found decorator & handler */
   fastify.decorate('sendNotFound', (request, reply) => {
-    const file = fileCache[FILES.HTML_404]?.file;
+    const file = fastify.fileCache[FILES.HTML_404]?.file;
     if (file != null) {
       reply.code(404).type('text/html').send(file);
     } else {
@@ -100,15 +103,15 @@ module.exports = async function (fastify, opts) {
   // load plugins
   await fastify.register(Autoload, {
     // dir: join(__dirname, 'plugins'),
-    dir: filePaths.src.directories[DIRECTORIES.srcDirPlugins],
-    options: Object.assign({}, opts)
+    dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirPlugins],
+    options: Object.assign({}, options)
   });
 
   // load routes
   await fastify.register(Autoload, {
     // dir: join(__dirname, 'routes'),
-    dir: filePaths.src.directories[DIRECTORIES.srcDirRoutes],
+    dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirRoutes],
     dirNameRoutePrefix: false,
-    options: Object.assign({}, opts)
+    options: Object.assign({}, options)
   });
 };

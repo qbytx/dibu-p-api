@@ -1,0 +1,50 @@
+{
+    "http": {
+        "options": {
+            "name": "http",
+            "dependencies": []
+        }
+    },
+    "security":{
+        "options": {
+            "name": "security",
+            "dependencies": ["auth"]
+        }
+    },
+    "staticAssets": {
+        "options": {
+            "name": "staticAssets",
+            "dependencies": []
+        }
+    },
+    "rateLimit": {
+        "options": {
+            "name": "rateLimit",
+            "dependencies": []
+        }
+    },
+    "notFound": {
+        "options": {
+            "name": "notFound",
+            "dependencies": ["fileCache"]
+        }
+    },
+    "fileCache": {
+        "options": {
+            "name": "fileCache",
+            "dependencies": ["filePaths"]
+        }
+    },
+    "filePaths": {
+        "options": {
+            "name": "filePaths",
+            "dependencies": []
+        }
+    },
+    "auth": {
+        "options": {
+            "name": "auth",
+            "dependencies": ["http"]
+        }
+    }
+}
