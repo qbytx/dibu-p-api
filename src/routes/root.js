@@ -1,9 +1,7 @@
 'use strict';
 
-const FILES = require('../data/json/files.json');
-
 module.exports = async function frontend (fastify, opts) {
-  const indexHTML = fastify.fileCache.getFile(FILES.HTML_INDEX);
+  const indexHTML = fastify.fileCache.getFile(fastify.filePaths.fileKeys.FILE_INDEX);
 
   if (indexHTML == null) {
     throw new Error('Could not serve a cached index.html file');

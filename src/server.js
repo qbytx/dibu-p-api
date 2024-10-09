@@ -50,13 +50,13 @@ async function buildFastify () {
 
   // Plugins
   await fastify.register(Autoload, {
-    dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirPlugins],
+    dir: fastify.filePaths.source.directories[DIRECTORIES.srcDirPlugins],
     options: {}
   });
 
   // Routes
   await fastify.register(Autoload, {
-    dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirRoutes],
+    dir: fastify.filePaths.source.directories[DIRECTORIES.srcDirRoutes],
     dirNameRoutePrefix: false,
     options: {}
   });
@@ -64,11 +64,8 @@ async function buildFastify () {
   return fastify;
 }
 
-async function start () {
-  let fastify;
+async function start (fastify) {
   try {
-    fastify = await buildFastify();
-
     // Server init
     const port = configServer?.port || 4000;
     await fastify.listen({ port, host: '0.0.0.0' });
@@ -107,7 +104,7 @@ function setupGracefulShutdown (fastify) {
 async function run () {
   const fastify = await buildFastify();
   setupGracefulShutdown(fastify);
-  await start();
+  await start(fastify);
 }
 
 // start server

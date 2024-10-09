@@ -19,7 +19,8 @@ const FILEKEYS = Object.freeze({
  */
 const FilepathsSchema = Joi.object({
   public: Joi.object().default({}),
-  source: Joi.object().default({})
+  source: Joi.object().default({}),
+  fileKeys: Joi.object()
 }).required();
 
 /**
@@ -77,6 +78,9 @@ function convertFilesToObject (files, fastify) {
 }
 
 async function filePaths (fastify, options) {
+  // Ensure this section is not logging more than needed
+  fastify.log.info('Initializing file paths...');
+
   // PUBLIC FILES
   const filesPublic = [
     fileSchema.validate({
@@ -135,7 +139,7 @@ async function filePaths (fastify, options) {
   const { error, value } = FilepathsSchema.validate({
     public: pathPublic.value,
     source: pathSource.value,
-    FILEKEYS
+    fileKeys: FILEKEYS
   });
 
   if (error) {

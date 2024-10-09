@@ -6,9 +6,10 @@ const PLUGINS = require('../../data/json/plugins.json');
 
 // File cache schema
 const FileCacheSchema = Joi.object({
+  fileKey: Joi.string().required(),
   fileName: Joi.string().required(),
   filePath: Joi.string().required(),
-  fileContent: Joi.binary().required()
+  contents: Joi.binary().required()
 }).required();
 
 function createFileCache () {
@@ -27,7 +28,7 @@ function createFileCache () {
     try {
       const fileContent = await fsPromises.readFile(fileInfo.filePath);
       const validatedCache = FileCacheSchema.validate({
-        fileKey: fileInfo.fileKey,
+        fileKey,
         fileName: fileInfo.fileName,
         filePath: fileInfo.filePath,
         contents: fileContent
@@ -38,7 +39,7 @@ function createFileCache () {
       }
 
       cache.set(fileKey, validatedCache.value);
-      fastify.log.info(`[FILE] loaded: ${fileKey}`);
+      fastify.log.info(`[FILE] cached: ${fileKey}`);
     } catch (error) {
       const errorMsg = `Failed to read or validate file ${fileKey} at ${fileInfo.filePath}\n ${error.message}`;
       fastify.log.error(errorMsg);
@@ -81,6 +82,7 @@ async function fileCache (fastify, options) {
     }
 
     try {
+      fastify.log.info(`Attempting to cache file: ${fileKey}`);
       await cache.cacheFile(fileKey, fileInfo, fastify);
     } catch (error) {
       fastify.log.error(`Failed to cache file ${fileKey}: ${error.message}`);

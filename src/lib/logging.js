@@ -18,24 +18,24 @@ const loggingOptions = {
           method: req.method,
           url: req.url,
           headers: req.headers
-          // Add more fields as needed
+          // can add more fields if i want
         };
       }
     },
     formatters: {
       log (object) {
-        // Extract the stack trace
-        const stack = new Error().stack;
-        const lineInfo = stack.split('\n')[3].trim(); // Adjust index based on the depth of your stack
-        const fileInfo = lineInfo.match(/\((.*?):(\d+):(\d+)\)/); // Regex to extract file name and line number
+        // stack trace
+        // const stack = new Error().stack;
+        // const lineInfo = stack.split('\n')[3].trim(); // Adjust index based on the depth of your stack
+        // const fileInfo = lineInfo.match(/\((.*?):(\d+):(\d+)\)/); // Regex to extract file name and line number
 
-        if (fileInfo) {
-          const [_, file, line] = fileInfo; // Destructure the matched groups
-          object.file = file;
-          object.line = line;
-        }
+        // if (fileInfo) {
+        //   const [file, line] = fileInfo; // Destructure the matched groups
+        //   object.file = file;
+        //   object.line = line;
+        // }
 
-        return object; // Return the modified object
+        return object;
       }
     }
   }
