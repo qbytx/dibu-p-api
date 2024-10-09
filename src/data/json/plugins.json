@@ -3,49 +3,49 @@
         "options": {
             "name": "security",
             "dependencies": [],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     },
     "staticAssets": {
         "options": {
             "name": "staticAssets",
             "dependencies": [],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     },
     "rateLimit": {
         "options": {
             "name": "rateLimit",
             "dependencies": [],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     },
     "notFound": {
         "options": {
             "name": "notFound",
             "dependencies": ["fileCache"],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     },
     "fileCache": {
         "options": {
             "name": "fileCache",
             "dependencies": ["filePaths"],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     },
     "filePaths": {
         "options": {
             "name": "filePaths",
             "dependencies": [],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     },
     "appAuth": {
         "options": {
             "name": "appAuth",
             "dependencies": [],
-            "fastify": "4.x"
+            "fastify": "5.x"
         }
     }
 }

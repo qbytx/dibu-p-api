@@ -34,11 +34,11 @@ async function appAuth (fastify, options) {
       apiKey: authSupertokensConfig.apiKey
     },
     appInfo: {
-      appName: authConfig.appName, // Name of your app
-      apiDomain: authConfig.apiDomain, // API domain (backend)
-      websiteDomain: authConfig.websiteDomain, // Website domain (frontend)
-      apiBasePath: authConfig.apiBasePath, // API base path for SuperTokens
-      websiteBasePath: authConfig.websiteBasePath // Website base path for SuperTokens
+      appName: authConfig.appName, // The name of your app
+      apiDomain: authConfig.apiDomain, // Backend API domain (e.g., http://localhost:5002)
+      websiteDomain: authConfig.websiteDomain, // Frontend domain (e.g., http://localhost:3000)
+      apiBasePath: authConfig.apiBasePath, // Path for API routes (default is '/auth')
+      websiteBasePath: authConfig.websiteBasePath // Path for frontend routes (default is '/auth')
     },
     recipeList: [
       Dashboard.init(),

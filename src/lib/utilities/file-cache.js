@@ -48,14 +48,15 @@ function createFileCache () {
 async function fileCachePlugin (fastify, options) {
   const fileCache = createFileCache();
 
-  for (const fileKey of FILES) {
-    const filePath = fastify.filePaths.public.files[fileKey];
+  Object.entries(FILES).forEach(async ([fileKey, fileName]) => {
+    const filePath = fastify.filePaths.public.files[fileName];
     if (!filePath) {
-      fastify.log.warn(`File path not found for key: ${fileKey}`);
-      continue;
+      fastify.log.warn(`File path not found for file key: ${fileKey}`);
+    } else {
+      fastify.log.info(`File Loaded: ${fileName}`);
+      await fileCache.cacheFile(fileKey, filePath, fastify);
     }
-    await fileCache.cacheFile(fileKey, filePath, fastify);
-  }
+  });
 
   /**
    * @ Decorate
