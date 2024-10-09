@@ -3,21 +3,20 @@ require('dotenv').config();
 require('make-promises-safe');
 const Fastify = require('fastify');
 const Env = require('@fastify/env');
-const Auth = require('./auth.js');
-// const App = require('../docs/app.js');
 const Jwt = require('@fastify/jwt');
 const Autoload = require('@fastify/autoload');
-
 const DIRECTORIES = require('./data/json/directories.json');
-const FILES = require('./data/json/files.json');
+
 /**
- * PLUGINS
+ * Lib: Utilities
  */
-// LIB
 const filePaths = require('./lib/utilities/file-paths.js');
 const fileCache = require('./lib/utilities/file-cache.js');
+const appAuth = require('./lib/utilities/app-auth.js');
 
-// config
+/**
+ * Configuration
+ */
 const config = require('config');
 const secrets = config.get('secrets');
 const server = config.get('server');
@@ -37,31 +36,39 @@ async function start () {
 
   try {
     /**
+     * [ENVIRONMENT]
+     */
+    await fastify.register(Env, environmentOptions);
+
+    /**
      * [FILESYSTEM INIT]
      */
     await fastify.register(filePaths);
     await fastify.register(fileCache);
 
     /**
-     * [AUTH INIT]
+     * [JWT INIT]
      * */
     await fastify.register(Jwt, {
       secret: secrets.jwtSecret
     });
-    Auth.init(fastify);
 
     /**
-     * [ENVIRONMENT]
+     * [AUTH INIT]
      */
-    await fastify.register(Env, environmentOptions);
+    await fastify.register(appAuth);
 
-    // load plugins
+    /**
+     * [PLUGINS]
+     */
     await fastify.register(Autoload, {
       dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirPlugins],
       options: {}
     });
 
-    // load routes
+    /**
+     * [ROUTES]
+     */
     await fastify.register(Autoload, {
       dir: fastify.filePaths.src.directories[DIRECTORIES.srcDirRoutes],
       dirNameRoutePrefix: false,
@@ -88,7 +95,7 @@ async function start () {
     });
 
     /**
-     * Connect DB & Services
+     * [Database & Services]
      */
     await initializeSecrets(getFastifyConfiguration(fastify));
     await connectDatabasePool(getSecrets());
