@@ -1,120 +1,148 @@
 'use strict';
-const { join, resolve } = require('node:path');
 const fp = require('fastify-plugin');
 const config = require('config');
+const { join, resolve } = require('node:path');
+const Joi = require('joi');
 const PLUGINS = require('../../data/json/plugins.json');
 
-// Constants
+// Define the API version and root directory
 const API_VERSION = config.get('api').name;
-const ERROR_DUPLICATE = 'duplicate path entry in object.';
-const _joinScriptPath = join(__dirname, __filename);
-const _joinPublicPath = join(__dirname, '../../', 'public');
-const _joinSourcePath = join(__dirname, '../../');
-const scriptPath = resolve(_joinScriptPath);
-const publicPath = resolve(_joinPublicPath);
-const sourcePath = resolve(_joinSourcePath);
+const ROOT_DIR = resolve(__dirname, '../../../');
+
+const FILEKEYS = Object.freeze({
+    FILE_INDEX: 'index',
+    FILE_404: '404'
+});
 
 /**
- * Error Handling
+ * Filepaths Schema
  */
-const onError = (err, source) => {
-  console.error(`Error: [${err}] in ${source} in ${scriptPath}`);
-  throw new Error(`${err} :: ${source} in ${scriptPath}`);
+const FilepathsSchema = Joi.object({
+  public: Joi.object().default({}),
+  source: Joi.object().default({})
+}).required();
+
+/**
+ * Path Schema
+ */
+const pathSchema = Joi.object({
+  root: Joi.string().default(ROOT_DIR),
+  directories: Joi.object().default({}).required(),
+  files: Joi.object().default({}).required()
+}).required();
+
+/**
+ * File Schema
+ */
+const fileSchema = Joi.object({
+  fileKey: Joi.string().required(),
+  fileName: Joi.string().required(),
+  filePath: Joi.string().required()
+}).required();
+
+/**
+ * Utils
+ */
+/**
+ * Gets a Directory
+ * @param {string} relPath
+ * @returns {string}
+ */
+const getDir = (relPath) => {
+  return join(ROOT_DIR, relPath);
 };
 
 /**
- * Files & Directories
+ * Gets a Filepath
+ * @param {string} relPath
+ * @param {string} fileName
+ * @returns {string}
  */
-const FILES = require('../../data/json/files.json');
-const DIRECTORIES = require('../../data/json/directories.json');
-
-// Path mappings
-const publicFiles = new Map([
-  [FILES.HTML_INDEX, FILES.HTML_INDEX],
-  [FILES.HTML_404, FILES.HTML_404]
-]);
-
-const publicDirectories = new Map([
-  [DIRECTORIES.publicDirCss, `./${DIRECTORIES.publicDirCss}`],
-  [DIRECTORIES.publicDirImg, `./${DIRECTORIES.publicDirImg}`]
-]);
-
-const sourceDirectories = new Map([
-  [DIRECTORIES.srcDirPlugins, `./${DIRECTORIES.srcDirPlugins}`],
-  [DIRECTORIES.srcDirRoutes, `./${DIRECTORIES.srcDirRoutes}`],
-  [DIRECTORIES.srcDirData, `./${DIRECTORIES.srcDirData}`],
-  [DIRECTORIES.srcDirJson, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirJson}`],
-  [DIRECTORIES.srcDirModels, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirModels}`],
-  [DIRECTORIES.srcDirTemplates, `./${DIRECTORIES.srcDirData}/${DIRECTORIES.srcDirTemplates}`],
-  [DIRECTORIES.srcDirApi, `./${DIRECTORIES.srcDirRoutes}/${API_VERSION}`]
-]);
-
-// Initialize paths object
-const _paths = {
-  public: {
-    path: publicPath,
-    pathPrefix: '/',
-    directories: {},
-    files: {}
-  },
-  src: {
-    path: sourcePath,
-    pathPrefix: './src/',
-    directories: {},
-    files: {}
-  }
+const getFp = (relPath, fileName) => {
+  return join(ROOT_DIR, relPath, fileName);
 };
 
-/**
- * Resolves and adds paths to the target object.
- *
- * @param {Object} options - Options for path resolution.
- * @param {string} options.basePath - Base path to resolve against.
- * @param {Map<string, string>} options.pathMap - Key-value pairs of paths to resolve.
- * @param {Object} options.targetObject - Object to add resolved paths to.
- * @param {string} options.pathType - Type of paths (e.g., 'file', 'directory').
- * @param {Object} fastify - Fastify instance for logging.
- * @throws {Error} Throws if a duplicate path is encountered.
- */
-function resolveAndAddPath ({ basePath, pathMap, targetObject, pathType }, fastify) {
-  for (const [key, relativePath] of pathMap) {
-    const fullPath = join(basePath, relativePath);
-    const resolvedPath = resolve(fullPath);
 
-    if (key in targetObject) {
-      const errorMessage = `Duplicate ${pathType} path: ${key}`;
-      onError(ERROR_DUPLICATE, errorMessage);
+/**
+ * Converts an array of validated files to an object and handles errors
+ * @param {Array} files - Array of Joi validation results
+ * @param {Object} fastify - Fastify instance for logging
+ * @returns {Object} - Object with fileKey as keys and file info as values
+ */
+function convertFilesToObject (files, fastify) {
+  const result = {};
+  const errors = [];
+
+  files.forEach((validationResult, index) => {
+    if (validationResult.error) {
+      errors.push(`Validation error in file ${index}: ${validationResult.error.message}`);
+    } else {
+      const { fileKey, fileName, filePath } = validationResult.value;
+      result[fileKey] = { fileName, filePath };
     }
+  });
 
-    fastify.log.info(`Loaded [${pathType.toUpperCase()}] path: ${resolvedPath}`);
-    targetObject[key] = resolvedPath;
+  if (errors.length > 0) {
+    errors.forEach(error => fastify.log.error(error));
+    throw new Error('File validation errors occurred. Check logs for details.');
   }
-}
 
-function createOptions (basePath, pathMap, targetObject, pathType) {
-  return {
-    basePath,
-    pathMap,
-    targetObject,
-    pathType
-  };
+  return result;
 }
 
 async function filePaths (fastify, options) {
-  // Resolve and add public files
-  resolveAndAddPath(createOptions(publicPath, publicFiles, _paths.public.files, 'public-file'), fastify);
+  /**
+   *  PUBLIC FILES
+   */
+  const filesPublic = [
+    fileSchema.validate({
+      fileKey: FILEKEYS.FILE_INDEX,
+      fileName: 'index.html',
+      filePath: getFp('./src/public/', 'index.html')
+    }),
+    fileSchema.validate({
+      fileKey: FILEKEYS.FILE_404,
+      fileName: '404.html',
+      filePath: getFp('./src/public/', '404.html')
+    })
+  ];
 
-  // Resolve and add public directories
-  resolveAndAddPath(createOptions(publicPath, publicDirectories, _paths.public.directories, 'public-directory'), fastify);
-
-  // Resolve and add source directories
-  resolveAndAddPath(createOptions(sourcePath, sourceDirectories, _paths.src.directories, 'source-directory'), fastify);
+  const pathPublic = pathSchema.validate({
+    root: getDir('./src/public/'),
+    directories: {
+      css: getDir('./src/public/css'),
+      img: getDir('./src/public/img')
+    },
+    files: convertFilesToObject(filesPublic)
+  }).value;
 
   /**
-   * @ Decorate
+   *  SOURCE FILES
    */
-  // Decorate fastify instance with filePaths
-  fastify.decorate(PLUGINS.filePaths.options.name, _paths);
+  const filesSource = [];
+
+  const pathSource = pathSchema.validate({
+    root: getDir('./src'),
+    directories: {
+      plugins: getDir('./src/plugins/'),
+      routes: getDir('./src/routes/'),
+      data: getDir('./src/data/'),
+      json: getDir('./src/data/json/'),
+      models: getDir('./src/data/models/'),
+      templates: getDir('./src/data/templates/'),
+      api: join(getDir(`./src/routes/${API_VERSION}/`))
+    },
+    files: convertFilesToObject(filesSource);
+  }).value;
+
+  // Combine validated
+  const { value } = FilepathsSchema.validate({
+    public: pathPublic.value,
+    source: pathSource.value,
+    FILEKEYS
+  });
+
+  fastify.decorate(PLUGINS.filePaths.options.name, value);
 }
 
-module.exports = fp(filePaths, PLUGINS.filePaths.options);
+module.exports = fp(filePaths, PLUGINS.filePaths.options.name);
