@@ -16,6 +16,8 @@ const init = async (fastify) => {
   const config = require('config');
   const authConfig = config.get('auth');
   const authGoogleConfig = config.get('authGoogle');
+  const authGithubConfig = config.get('authGithub');
+  const authDiscordConfig = config.get('authDiscord');
   const authSupertokensConfig = config.get('authSupertokens');
 
   auth.client = supertokens.init({
@@ -25,7 +27,6 @@ const init = async (fastify) => {
       apiKey: authSupertokensConfig.apiKey
     },
     appInfo: {
-    // learn more about this on https://supertokens.com/docs/session/appinfo
       appName: authConfig.appName, // app name
       apiDomain: authConfig.apiDomain, // api domain
       websiteDomain: authConfig.websiteDomain, // website domain
@@ -46,14 +47,19 @@ const init = async (fastify) => {
               }]
             }
           }, {
-          // We have provided you with development keys which you can use for testing.
-          // IMPORTANT: Please replace them with your own OAuth keys for production use.
-          // this is still testing env below
             config: {
               thirdPartyId: 'github',
               clients: [{
-                clientId: '467101b197249757c71f',
-                clientSecret: 'e97051221f4b6426e8fe8d51486396703012f5bd'
+                clientId: authGithubConfig.clientId,
+                clientSecret: authGithubConfig.clientSecret
+              }]
+            }
+          }, {
+            config: {
+              thirdPartyId: 'discord',
+              clients: [{
+                clientId: authDiscordConfig.clientId,
+                clientSecret: authDiscordConfig.clientSecret
               }]
             }
           }]
@@ -62,6 +68,6 @@ const init = async (fastify) => {
       Session.init() // initializes session features
     ]
   });
-
-  module.exports = { init, auth };
 };
+
+module.exports = { init, auth };
