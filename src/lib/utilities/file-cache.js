@@ -23,7 +23,7 @@ function createFileCache () {
       cache.set(fileKey, { key: fileKey, path: filePath, file });
       fastify.log.info(`[FILE] loaded: ${fileKey}`);
     } catch (error) {
-      const errorMsg = `Failed to read file [${fileKey}] at [${filePath}]: ${error.message}`;
+      const errorMsg = `Failed to read file ${fileKey} at ${filePath}\n ${error.message}`;
       fastify.log.error(errorMsg);
       throw new Error(errorMsg);
     }
@@ -45,16 +45,16 @@ function createFileCache () {
   };
 }
 
-async function fileCachePlugin (fastify, options) {
-  const fileCache = createFileCache();
+async function fileCache (fastify, options) {
+  const cache = createFileCache();
 
   Object.entries(FILES).forEach(async ([fileKey, fileName]) => {
     const filePath = fastify.filePaths.public.files[fileName];
     if (!filePath) {
       fastify.log.warn(`File path not found for file key: ${fileKey}`);
     } else {
-      fastify.log.info(`File Loaded: ${fileName}`);
-      await fileCache.cacheFile(fileKey, filePath, fastify);
+      fastify.log.info(`File Loaded: ${filePath}`);
+      await cache.cacheFile(fileName, filePath, fastify);
     }
   });
 
@@ -63,10 +63,10 @@ async function fileCachePlugin (fastify, options) {
    */
 
   fastify.decorate(PLUGINS.fileCache.options.name, {
-    getFile: fileCache.getFile,
-    getFilePath: fileCache.getFilePath,
-    isFileCached: fileCache.isFileCached
+    getFile: cache.getFile,
+    getFilePath: cache.getFilePath,
+    isFileCached: cache.isFileCached
   });
 }
 
-module.exports = fp(fileCachePlugin, PLUGINS.fileCache.options);
+module.exports = fp(fileCache, PLUGINS.fileCache.options);

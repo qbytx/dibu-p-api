@@ -1,5 +1,4 @@
 'use strict';
-
 const supertokens = require('supertokens-node');
 const Session = require('supertokens-node/recipe/session');
 const EmailPassword = require('supertokens-node/recipe/emailpassword');
@@ -9,22 +8,18 @@ const config = require('config');
 const fp = require('fastify-plugin');
 const PLUGINS = require('../../data/json/plugins.json');
 
-const initialized = false;
-
-const auth = {
-  client: null,
-  initialized () {
-    const value = initialized;
-    return value;
-  }
-};
-
 async function appAuth (fastify, options) {
   const authConfig = config.get('auth');
   const authGoogleConfig = config.get('authGoogle');
   const authGithubConfig = config.get('authGithub');
   const authDiscordConfig = config.get('authDiscord');
   const authSupertokensConfig = config.get('authSupertokens');
+
+  // Validate required fields
+  if (!authConfig.apiDomain) {
+    console.log(authConfig);
+    throw new Error('apiDomain is not set in the auth configuration!');
+  }
 
   // Initialize SuperTokens
   supertokens.init({
@@ -34,11 +29,11 @@ async function appAuth (fastify, options) {
       apiKey: authSupertokensConfig.apiKey
     },
     appInfo: {
-      appName: authConfig.appName, // The name of your app
-      apiDomain: authConfig.apiDomain, // Backend API domain (e.g., http://localhost:5002)
-      websiteDomain: authConfig.websiteDomain, // Frontend domain (e.g., http://localhost:3000)
-      apiBasePath: authConfig.apiBasePath, // Path for API routes (default is '/auth')
-      websiteBasePath: authConfig.websiteBasePath // Path for frontend routes (default is '/auth')
+      appName: authConfig.appName,
+      apiDomain: authConfig.apiDomain,
+      websiteDomain: authConfig.websiteDomain,
+      apiBasePath: authConfig.apiBasePath,
+      websiteBasePath: authConfig.websiteBasePath
     },
     recipeList: [
       Dashboard.init(),
@@ -76,14 +71,48 @@ async function appAuth (fastify, options) {
           ]
         }
       }),
-      Session.init() // Initializes session features
+      Session.init()
     ]
+  });
+
+  // fastify.addHook('onRequest', async (request, reply) => {
+  //   await supertokens.middleware()(request.raw, reply.raw);
+  // });
+
+  // fastify.addHook('preHandler', async (request, reply) => {
+  //   await supertokens.middleware()(request.raw, reply.raw);
+  // });
+
+  // Error handler
+  fastify.setErrorHandler(async (error, request, reply) => {
+    // First, check if it's a SuperTokens error
+    if (supertokens.errorHandler(error, request.raw, reply.raw)) {
+    // If SuperTokens handled the error, we're done
+      return;
+    }
+
+    // If it's not a SuperTokens error, use sensible's error handling
+    if (error.statusCode) {
+      // If the error has a status code, use it
+      reply.status(error.statusCode);
+    } else if (error.status) {
+      // Some errors use 'status' instead of 'statusCode'
+      reply.status(error.status);
+    } else {
+      // Default to 500 if no status is provided
+      reply.status(500);
+    }
+
+    // Use sensible's error serializer
+    return reply.send(fastify.httpErrors.errorHandler(error, request, reply));
   });
 
   /**
    * @ Decorate
    */
-  fastify.decorate(PLUGINS.appAuth.options.name, auth);
+  fastify.decorate(PLUGINS.appAuth.options.name, {
+    verifySession: Session.verifySession
+  });
 }
 
 // Export the plugin using fastify-plugin

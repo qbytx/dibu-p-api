@@ -6,6 +6,10 @@ const Sensible = require('@fastify/sensible');
 const Helmet = require('@fastify/helmet');
 const Cors = require('@fastify/cors');
 const PLUGINS = require('../data/json/plugins.json');
+const supertokens = require('supertokens-node');
+
+// for getting auth configuration
+const authConfig = require('config').get('auth');
 
 async function security (fastify, options) {
   await fastify.register(Sensible);
@@ -17,8 +21,11 @@ async function security (fastify, options) {
     maxEventLoopUtilization: 0.98
   });
 
+  // Add [SuperTokens Auth] middleware to Fastify
   await fastify.register(Cors, {
-    origin: false
+    origin: authConfig.websiteDomain,
+    allowedHeaders: ['content-type', ...supertokens.getAllCORSHeaders()],
+    credentials: true
   });
 
   await fastify.register(Helmet, {
