@@ -1,19 +1,16 @@
 'use strict';
 
+const fp = require('fastify-plugin');
 const fsPromises = require('node:fs').promises;
-
-// todo, we need to graph filecache as a child of filepaths in the load cycle
-// so that we don't need to import {filePaths} and rely on imperative definitions
-
 const { filePaths, FILES } = require('./filePaths');
 
-const fileCache = {};
+const cache = {};
 
-const isFileCached = (fileKey) => {
-  return fileCache[fileKey] && fileCache[fileKey].file != null;
+const isFileCached = (filesKey) => {
+  return cache[filesKey]?.file != null;
 };
 
-const loadFileCache = async (fastify) => {
+async function fileCache (fastify, options) {
   const filePathMap = new Map([
     [FILES.HTML_INDEX, filePaths.public.files[FILES.HTML_INDEX]],
     [FILES.HTML_404, filePaths.public.files[FILES.HTML_404]]
@@ -25,15 +22,15 @@ const loadFileCache = async (fastify) => {
       continue;
     }
     try {
-      fileCache[k] = {
+      cache[k] = {
         key: k,
         path: v,
         file: null
       };
 
-      fileCache[k].file = await fsPromises.readFile(v);
+      cache[k].file = await fsPromises.readFile(v);
 
-      if (fileCache[k] != null) {
+      if (cache[k] != null) {
         fastify.log.info(`[FILE] loaded: ${k}`);
       }
     } catch (error) {
@@ -42,9 +39,9 @@ const loadFileCache = async (fastify) => {
       fastify.log.error(errorMsg);
     }
   }
-};
+}
 
-module.exports = {
-  fileCache,
-  loadFileCache
-};
+module.exports = fp(fileCache, {
+  name: 'fileCache',
+  dependencies: [] // If there are dependencies, they can be added here
+});

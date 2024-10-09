@@ -97,7 +97,7 @@ async function rateLimit (fastify, opts) {
     allowList: ['127.0.0.1'], // no rate limit on localhost
     store: LRUStore,
     timeWindow: '1 minute',
-    max: 100
+    max: 50
   });
 }
 

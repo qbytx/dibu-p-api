@@ -33,6 +33,7 @@
     "config": "^3.3.12",
     "dotenv": "^16.4.5",
     "fastify": "^5.0.0",
+    "fastify-cookie": "^5.6.1",
     "fluent-json-schema": "^5.0.0",
     "joi": "^17.13.3",
     "js-yaml": "^4.1.0",

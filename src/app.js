@@ -7,10 +7,7 @@ const Helmet = require('@fastify/helmet');
 const Static = require('@fastify/static');
 const Cors = require('@fastify/cors');
 
-const { fileCache, loadFileCache } = require('./lib/fileCache');
-const { filePaths, FILES, DIRECTORIES } = require('./lib/filePaths');
-
-module.exports = async function (fastify, opts) {
+module.exports = async function (fastify, options) {
   // `fastify-sensible` adds many  small utilities, such as nice http errors.
   await fastify.register(Sensible);
 
@@ -72,6 +69,9 @@ module.exports = async function (fastify, opts) {
     }
   });
 
+  /**
+   * Static Assets
+   */
   /* Static */
   await fastify.register(Static, {
     root: filePaths.public.path,
@@ -81,6 +81,9 @@ module.exports = async function (fastify, opts) {
   /* Load files into memory */
   await loadFileCache(fastify);
 
+  /**
+   * 404 - Page Not Found
+   */
   /* not found decorator & handler */
   fastify.decorate('sendNotFound', (request, reply) => {
     const file = fileCache[FILES.HTML_404]?.file;
@@ -101,7 +104,7 @@ module.exports = async function (fastify, opts) {
   await fastify.register(Autoload, {
     // dir: join(__dirname, 'plugins'),
     dir: filePaths.src.directories[DIRECTORIES.srcDirPlugins],
-    options: Object.assign({}, opts)
+    options: Object.assign({}, options)
   });
 
   // load routes
@@ -109,6 +112,6 @@ module.exports = async function (fastify, opts) {
     // dir: join(__dirname, 'routes'),
     dir: filePaths.src.directories[DIRECTORIES.srcDirRoutes],
     dirNameRoutePrefix: false,
-    options: Object.assign({}, opts)
+    options: Object.assign({}, options)
   });
 };
