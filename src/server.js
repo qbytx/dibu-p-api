@@ -5,18 +5,14 @@ require('make-promises-safe');
 
 const Fastify = require('fastify');
 const Env = require('@fastify/env');
-const Jwt = require('@fastify/jwt');
 const Autoload = require('@fastify/autoload');
 
 // Utilities
 const filePaths = require('./lib/utilities/file-paths.js');
 const fileCache = require('./lib/utilities/file-cache.js');
-const appAuth = require('./lib/utilities/app-auth.js');
 
 // Configuration
-const config = require('config');
-const configSecrets = config.get('secrets');
-const configServer = config.get('server');
+const configServer = require('config').get('server');
 
 // Environment
 const DIRECTORIES = require('./data/json/directories.json');
@@ -39,14 +35,6 @@ async function buildFastify () {
   // Filesystem init
   await fastify.register(filePaths);
   await fastify.register(fileCache);
-
-  // JWT init
-  await fastify.register(Jwt, {
-    secret: configSecrets.jwtSecret
-  });
-
-  // Auth init
-  await fastify.register(appAuth);
 
   // Plugins
   await fastify.register(Autoload, {

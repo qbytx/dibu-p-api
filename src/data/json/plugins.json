@@ -1,8 +1,14 @@
 {
+    "http": {
+        "options": {
+            "name": "http",
+            "dependencies": []
+        }
+    },
     "security":{
         "options": {
             "name": "security",
-            "dependencies": []
+            "dependencies": ["auth"]
         }
     },
     "staticAssets": {
@@ -35,10 +41,10 @@
             "dependencies": []
         }
     },
-    "appAuth": {
+    "auth": {
         "options": {
-            "name": "appAuth",
-            "dependencies": []
+            "name": "auth",
+            "dependencies": ["http"]
         }
     }
 }

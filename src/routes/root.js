@@ -13,6 +13,6 @@ module.exports = async function frontend (fastify, opts) {
       .code(200)
       .header('X-Robots-Tag', 'noindex, nofollow')
       .type('text/html')
-      .send(indexHTML);
+      .send(indexHTML.contents);
   });
 };

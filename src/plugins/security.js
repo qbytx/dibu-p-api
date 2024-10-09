@@ -2,17 +2,22 @@
 
 const fp = require('fastify-plugin');
 const UnderPressure = require('@fastify/under-pressure');
-const Sensible = require('@fastify/sensible');
 const Helmet = require('@fastify/helmet');
 const Cors = require('@fastify/cors');
+const Jwt = require('@fastify/jwt');
+
 const PLUGINS = require('../data/json/plugins.json');
 const supertokens = require('supertokens-node');
 
-// for getting auth configuration
+// Configuration
 const authConfig = require('config').get('auth');
+const configSecrets = require('config').get('secrets');
 
 async function security (fastify, options) {
-  await fastify.register(Sensible);
+  // JWT init
+  await fastify.register(Jwt, {
+    secret: configSecrets.jwtSecret
+  });
 
   await fastify.register(UnderPressure, {
     maxEventLoopDelay: 1000,

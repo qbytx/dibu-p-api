@@ -5,9 +5,9 @@ const PLUGINS = require('../data/json/plugins.json');
 
 function notFound (fastify, options, done) {
   fastify.decorate('sendNotFound', (request, reply) => {
-    const file = fastify.fileCache.getFile(FILES.HTML_404);
+    const file = fastify.fileCache.getFile(fastify.filePaths.fileKeys.FILE_404);
     if (file != null) {
-      reply.code(404).type('text/html').send(file);
+      reply.code(404).type('text/html').send(file.contents);
     } else {
       reply.notFound();
     }
