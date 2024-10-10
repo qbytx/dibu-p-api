@@ -14,11 +14,16 @@ const authConfig = require('config').get('auth');
 const configSecrets = require('config').get('secrets');
 
 async function security (fastify, options) {
-  // JWT init
+  /**
+   * JWT
+   */
   await fastify.register(Jwt, {
     secret: configSecrets.jwtSecret
   });
 
+  /**
+   * Under Pressure
+   */
   await fastify.register(UnderPressure, {
     maxEventLoopDelay: 1000,
     maxHeapUsedBytes: 1000000000,
@@ -26,13 +31,20 @@ async function security (fastify, options) {
     maxEventLoopUtilization: 0.98
   });
 
-  // Add [SuperTokens Auth] middleware to Fastify
+  /**
+   * CORS
+   */
   await fastify.register(Cors, {
-    origin: authConfig.websiteDomain,
-    allowedHeaders: ['content-type', ...supertokens.getAllCORSHeaders()],
+    // origin: authConfig.websiteDomain,
+    origin: 'http://localhost:4002',
+    allowedHeaders: ['Content-Type', ...supertokens.getAllCORSHeaders()],
+    methods: ['GET', 'PUT', 'POST', 'DELETE'],
     credentials: true
   });
 
+  /**
+   * Helmet
+   */
   await fastify.register(Helmet, {
     crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: {

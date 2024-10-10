@@ -1,7 +1,7 @@
 {
-    "http": {
+    "httpErrors": {
         "options": {
-            "name": "http",
+            "name": "httpErrors",
             "dependencies": []
         }
     },
@@ -44,7 +44,7 @@
     "auth": {
         "options": {
             "name": "auth",
-            "dependencies": ["http"]
+            "dependencies": ["httpErrors"]
         }
     }
 }

@@ -1,9 +1,14 @@
 'use strict';
-const supertokens = require('supertokens-node');
+
 const Session = require('supertokens-node/recipe/session');
 const EmailPassword = require('supertokens-node/recipe/emailpassword');
 const ThirdParty = require('supertokens-node/recipe/thirdparty');
 const Dashboard = require('supertokens-node/recipe/dashboard');
+
+const { plugin } = require('supertokens-node/framework/fastify');
+const supertokens = require('supertokens-node');
+const errorHandler = require('supertokens-node/framework/fastify');
+
 const config = require('config');
 const fp = require('fastify-plugin');
 const PLUGINS = require('../data/json/plugins.json');
@@ -75,6 +80,26 @@ async function appAuth (fastify, options) {
     ]
   });
 
+  await fastify.register(require('@fastify/formbody'));
+  await fastify.register(plugin);
+
+  // Error Handler (Supertokens)
+  fastify.setErrorHandler(errorHandler());
+
+  // Error handler (?)
+  // fastify.setErrorHandler(async (error, request, reply) => {
+  //   if (error.statusCode) {
+  //     reply.status(error.statusCode);
+  //   } else if (error.status) {
+  //     reply.status(error.status);
+  //   } else {
+  //     reply.status(500);
+  //   }
+
+  //   // Use sensible's error serializer
+  //   return reply.send(fastify.httpErrors.createError('400', error, request, reply));
+  // });
+
   // fastify.addHook('onRequest', async (request, reply) => {
   //   await supertokens.middleware()(request.raw, reply.raw);
   // });
@@ -82,20 +107,6 @@ async function appAuth (fastify, options) {
   // fastify.addHook('preHandler', async (request, reply) => {
   //   await supertokens.middleware()(request.raw, reply.raw);
   // });
-
-  // Error handler (?)
-  fastify.setErrorHandler(async (error, request, reply) => {
-    if (error.statusCode) {
-      reply.status(error.statusCode);
-    } else if (error.status) {
-      reply.status(error.status);
-    } else {
-      reply.status(500);
-    }
-
-    // Use sensible's error serializer
-    return reply.send(fastify.httpErrors.createError('400', error, request, reply));
-  });
 
   /**
    * @ Decorate
