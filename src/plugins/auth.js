@@ -2,7 +2,7 @@
 
 const supertokens = require('supertokens-node');
 const { plugin } = require('supertokens-node/framework/fastify');
-const { verifySession, getSession } = require('supertokens-node/recipe/session/framework/fastify');
+const { verifySession } = require('supertokens-node/recipe/session/framework/fastify');
 const Session = require('supertokens-node/recipe/session');
 const EmailPassword = require('supertokens-node/recipe/emailpassword');
 const ThirdParty = require('supertokens-node/recipe/thirdparty');
@@ -17,8 +17,8 @@ const logger = require('../utils/logger');
 
 // Application Roles
 const APP_ROLES = {
+  VISITOR: 'visitor',
   USER: 'user',
-  PLAYER: 'player',
   MODERATOR: 'moderator',
   ADMIN: 'admin'
 };
@@ -44,8 +44,13 @@ async function sendWelcomeEmail (email) {
   logger.info(`Sending welcome email to ${email}`);
 }
 
+async function addRolesAndPermissionsToSession (session) {
+  await session.fetchAndSetClaim(UserRoleClaim);
+  await session.fetchAndSetClaim(PermissionClaim);
+}
+
 async function addRoleToUser (userId) {
-  const roles = [APP_ROLES.USER, APP_ROLES.PLAYER];
+  const roles = [APP_ROLES.VISITOR, APP_ROLES.USER];
   const results = await Promise.all(
     roles.map(role => UserRoles.addRoleToUser('public', userId, role))
   );
@@ -59,18 +64,19 @@ async function addRoleToUser (userId) {
   });
 }
 
-async function addRolesAndPermissionsToSession (session) {
-  await session.fetchAndSetClaim(UserRoleClaim);
-  await session.fetchAndSetClaim(PermissionClaim);
-}
-
 async function removeRoleFromUserAndTheirSession (session) {
-  const response = await UserRoles.removeUserRole(session.getTenantId(), session.getUserId(), 'user');
+  const roles = [APP_ROLES.VISITOR, APP_ROLES.USER];
+  const results = await Promise.all(
+    roles.map(role => UserRoles.removeUserRole(session.getTenantId(), session.getUserId(), role))
+  );
 
-  if (response.status !== 'UNKNOWN_ROLE_ERROR' && response.didUserHaveRole) {
-    await session.fetchAndSetClaim(UserRoles.UserRoleClaim);
-    await session.fetchAndSetClaim(UserRoles.PermissionClaim);
-  }
+  results.forEach(async response => {
+    if (response.status === 'UNKNOWN_ROLE_ERROR') {
+      logger.warn(['UNKNOWN ROLE ERROR', JSON.stringify(response, null, 2)]);
+    } else if (response.didUserHaveRole) {
+      logger.info(['USER ROLE REMOVED', JSON.stringify(response, null, 2)]);
+    }
+  });
 }
 
 const schemaSignInUpEmailPassword = (originalImplementation) => ({
