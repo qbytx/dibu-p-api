@@ -2,7 +2,6 @@
 
 const supertokens = require('supertokens-node');
 const { plugin } = require('supertokens-node/framework/fastify');
-const { errorHandler } = require('supertokens-node/framework/fastify');
 const { verifySession } = require('supertokens-node/recipe/session/framework/fastify');
 const { getSession } = require('supertokens-node/recipe/session/framework/fastify');
 
@@ -13,6 +12,16 @@ const Dashboard = require('supertokens-node/recipe/dashboard');
 const UserRoles = require('supertokens-node/recipe/userroles');
 const { UserRoleClaim, PermissionClaim } = require('supertokens-node/recipe/userroles');
 const { SessionContainer } = require('supertokens-node/recipe/session');
+
+/**
+ * Application Roles
+ */
+const APP_ROLES = {
+  USER: 'user',
+  PLAYER: 'player',
+  MODERATOR: 'moderator',
+  ADMIN: 'admin'
+};
 
 /**
  * Fastify Plugin
@@ -27,16 +36,18 @@ const PLUGINS = require('../data/json/plugins.json');
 const logger = require('../utils/logger');
 
 async function addRoleToUser (userId) {
-  const response = await UserRoles.addRoleToUser('public', userId, 'user');
+  const res0 = await UserRoles.addRoleToUser('public', userId, APP_ROLES.USER);
+  const res1 = await UserRoles.addRoleToUser('public', userId, APP_ROLES.PLAYER);
 
-  if (response.status === 'UNKNOWN_ROLE_ERROR') {
-    logger.warn(['UNKNOWN ROLE ERROR', JSON.stringify(response, null, 2)]);
-    return;
-  }
-
-  if (response.didUserAlreadyHaveRole === true) {
-    logger.warn(['USER ALREADY HAD ROLE', JSON.stringify(response, null, 2)]);
-  }
+  [res0, res1].forEach(async (r) => {
+    if (r.status === 'UNKNOWN_ROLE_ERROR') {
+      logger.warn(['UNKNOWN ROLE ERROR', JSON.stringify(r, null, 2)]);
+      return;
+    }
+    if (r.didUserAlreadyHaveRole === true) {
+      logger.warn(['USER ALREADY HAD ROLE', JSON.stringify(r, null, 2)]);
+    }
+  });
 }
 
 async function addRolesAndPermissionsToSession (session) {
@@ -90,7 +101,14 @@ const schemaSignInUpEmailPassword = (originalImplementation) => {
                 * - information about if the user's email is verified or not.
                 *
                 */
+        // TODO: how to check if sign-in? (not sign-up)
         // TODO: post sign up logic
+        // Create user profile in your game database
+        // await createUserProfile(response.user.id, response.user.email);
+        // // Initialize game data for the new user
+        // await initializeGameData(response.user.id);
+        // // Send welcome email
+        // await sendWelcomeEmail(response.user.email);
       }
       return response;
     }
@@ -119,6 +137,12 @@ const schemaSignInUpThirdParty = (originalImplementation) => {
         if (input.session === undefined) {
           if (response.createdNewRecipeUser && response.user.loginMethods.length === 1) {
             // TODO: Post sign up logic
+            // Create user profile in your game database
+            // await createUserProfile(response.user.id, response.user.email);
+            // // Initialize game data for the new user
+            // await initializeGameData(response.user.id);
+            // // Send welcome email
+            // await sendWelcomeEmail(response.user.email);
           } else {
             // TODO: Post sign in logic
           }
@@ -225,27 +249,6 @@ async function appAuth (fastify, options) {
   // (Does this) add supertokens routes to the server (e.g., /auth/signin/, /auth/signup/) ?
   await fastify.register(plugin);
 
-  // Custom error handler that incorporates SuperTokens error handling
-  fastify.setErrorHandler((error, request, reply) => {
-  // Call the SuperTokens error handler first
-    const supertokensResponse = errorHandler()(error, request, reply);
-    if (supertokensResponse) {
-      return supertokensResponse;
-    }
-
-    // Your custom error handling logic
-    switch (error.type) {
-      case 'UNAUTHORIZED':
-        return reply.code(401).send({ error: 'Authentication required' });
-      case 'FORBIDDEN':
-        return reply.code(403).send({ error: 'Access denied' });
-      case 'NOT_FOUND':
-        return reply.code(404).send({ error: 'Resource not found' });
-      default:
-        return reply.code(500).send({ error: 'Internal server error' });
-    }
-  });
-
   // Supertokens : Session Handler
   fastify.addHook('preHandler', async (request, reply) => {
     await getSession(request, reply);
@@ -254,19 +257,36 @@ async function appAuth (fastify, options) {
   /**
    * PUBLIC ROUTES
    */
+  fastify.post('/auth/signin', async (request, reply) => {
+    // ... sign-in logic ...
+    await addRolesAndPermissionsToSession(request.session);
+  });
+
   fastify.get('/online', async (request, reply) => {
-    // const session = request.session;
-    // View all users online (unless hidden)
+    const session = request.session;
+    const response = { onlineUsers: [] }; // Fetch this from your database
+    if (session) {
+      response.currentUser = {
+        id: session.getUserId()
+        // Add other relevant user data
+      };
+    }
+    return response;
   });
 
   fastify.get('/play', async (request, reply) => {
-    // const session = request.session;
-    // View all users online (unless hidden)
+    const session = request.session;
+    const gameData = { availableGames: [] }; // Fetch from your database
+    if (session) {
+      // gameData.userGames = await getUserGames(session.getUserId());
+    }
+    return gameData;
   });
 
   /**
    * PROTECTED ROUTES
    */
+
   fastify.get('/profile', { preHandler: verifySession() }, async (request, reply) => {
     // const session = request.session;
     // View user profile
