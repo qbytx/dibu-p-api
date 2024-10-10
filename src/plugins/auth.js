@@ -157,6 +157,7 @@ async function appAuth (fastify, options) {
       websiteBasePath: authConfig.websiteBasePath
     },
     recipeList: [
+      Session.init(),
       UserRoles.init(),
       Dashboard.init({ admins: adminEmails }),
       EmailPassword.init({
@@ -175,8 +176,7 @@ async function appAuth (fastify, options) {
         override: {
           functions: schemaSignInUpThirdParty
         }
-      }),
-      Session.init()
+      })
     ]
   });
 
@@ -191,38 +191,22 @@ async function appAuth (fastify, options) {
   await fastify.register(plugin);
 
   /**
-   * Supertokens Auth Handler
-   */
-  fastify.addHook('preHandler', async (request, reply) => {
-    await getSession(request, reply);
-  });
-
-  /**
    * Public routes
    */
 
   fastify.post('/auth/signin', async (request, reply) => {
-    await addRolesAndPermissionsToSession(request.session);
-  });
+    const session = await Session.getSession(request, reply);
+    const userId = session.getUserId();
+    logger.info(userId);
 
-  fastify.post('/auth/signout-all', verifySession(), async (request, reply) => {
-    if (request.session) {
-      await Session.revokeAllSessionsForUser(request.session.getUserId());
-      return { status: 'OK' };
-    }
-    return reply.code(401).send({ error: 'No active session' });
-  });
-
-  fastify.post('/auth/signout', verifySession(), async (request, reply) => {
-    if (request.session) {
-      await removeRoleFromUserAndTheirSession(request.session);
-      await request.session.revokeSession();
-      return { status: 'OK' };
-    }
-    return reply.code(401).send({ error: 'No active session' });
+    await addRolesAndPermissionsToSession(session);
   });
 
   fastify.get('/online', async (request, reply) => {
+    const session = await Session.getSession(request, reply);
+    const userId = session.getUserId();
+    logger.info(userId);
+
     const response = { onlineUsers: [] };
     if (request.session) {
       response.currentUser = { id: request.session.getUserId() };
@@ -231,6 +215,10 @@ async function appAuth (fastify, options) {
   });
 
   fastify.get('/play', async (request, reply) => {
+    const session = await Session.getSession(request, reply);
+    const userId = session.getUserId();
+    logger.info(userId);
+
     const gameData = { availableGames: [] };
     if (request.session) {
       // gameData.userGames = await getUserGames(request.session.getUserId());
@@ -258,6 +246,22 @@ async function appAuth (fastify, options) {
     // Admin panel logic here
   });
 
+  fastify.post('/auth/signout-all', { preHandler: verifySession() }, async (request, reply) => {
+    if (request.session) {
+      await Session.revokeAllSessionsForUser(request.session.getUserId());
+      return { status: 'OK' };
+    }
+    return reply.code(401).send({ error: 'No active session' });
+  });
+
+  fastify.post('/auth/signout', { preHandler: verifySession() }, async (request, reply) => {
+    if (request.session) {
+      await removeRoleFromUserAndTheirSession(request.session);
+      await request.session.revokeSession();
+      return { status: 'OK' };
+    }
+    return reply.code(401).send({ error: 'No active session' });
+  });
   fastify.decorate(PLUGINS.auth.options.name, {
     verifySession: Session.verifySession
   });
