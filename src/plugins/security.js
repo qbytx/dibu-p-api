@@ -42,19 +42,18 @@ async function security (fastify, options) {
     credentials: true
   });
 
-  /**
-   * Helmet
-   */
   await fastify.register(Helmet, {
     crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: {
       directives: {
-        defaultSrc: ["'self'"],
+        defaultSrc: ["'self'"], // Use 'self' correctly
         frameSrc: ["'self'"],
         scriptSrc: [
           "'self'",
           "'unsafe-eval'",
-          'https://unpkg.com'
+          "'unsafe-inline'", // Allow inline scripts
+          'https://unpkg.com',
+          'https://cdn.jsdelivr.net'
         ],
         fontSrc: [
           "'self'",
@@ -65,14 +64,19 @@ async function security (fastify, options) {
         ],
         connectSrc: [
           "'self'",
-          'https://unpkg.com'],
-        imgSrc: ["'self'"],
+          'https://unpkg.com'
+        ],
+        imgSrc: [
+          "'self'",
+          'https://cdn.jsdelivr.net' // Allow images from the CDN
+        ],
         styleSrc: [
           "'self'",
-          "'unsafe-inline'",
+          "'unsafe-inline'", // Allow inline styles
           'https://www.gstatic.com',
           'https://fonts.googleapis.com',
-          'https://unpkg.com'
+          'https://unpkg.com',
+          'https://cdn.jsdelivr.net' // Allow styles from the CDN
         ]
       }
     }
