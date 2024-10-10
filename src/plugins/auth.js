@@ -1,13 +1,13 @@
 'use strict';
 
+const supertokens = require('supertokens-node');
+const { plugin } = require('supertokens-node/framework/fastify');
+const { errorHandler } = require('supertokens-node/framework/fastify');
+
 const Session = require('supertokens-node/recipe/session');
 const EmailPassword = require('supertokens-node/recipe/emailpassword');
 const ThirdParty = require('supertokens-node/recipe/thirdparty');
 const Dashboard = require('supertokens-node/recipe/dashboard');
-
-const { plugin } = require('supertokens-node/framework/fastify');
-const supertokens = require('supertokens-node');
-const errorHandler = require('supertokens-node/framework/fastify');
 
 const config = require('config');
 const fp = require('fastify-plugin');
