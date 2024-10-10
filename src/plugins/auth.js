@@ -11,7 +11,35 @@ const ThirdParty = require('supertokens-node/recipe/thirdparty');
 const Dashboard = require('supertokens-node/recipe/dashboard');
 const UserRoles = require('supertokens-node/recipe/userroles');
 const { UserRoleClaim, PermissionClaim } = require('supertokens-node/recipe/userroles');
-const { SessionContainer } = require('supertokens-node/recipe/session');
+
+/**
+ * Spoof / Debugging functions
+ */
+
+async function getUserProfile (userId) {
+  // TODO: Implement fetching user profile from your database
+  return { userId /* other profile information */ };
+}
+
+async function getUserSettings (userId) {
+  // TODO: Implement fetching user settings from your database
+  return { userId /* user settings */ };
+}
+
+async function createUserProfile (userId, email) {
+  // TODO: Implement user profile creation in your database
+  logger.info(`Creating user profile for ${userId} with email ${email}`);
+}
+
+async function initializeGameData (userId) {
+  // TODO: Implement game data initialization
+  logger.info(`Initializing game data for user ${userId}`);
+}
+
+async function sendWelcomeEmail (email) {
+  // TODO: Implement welcome email sending
+  logger.info(`Sending welcome email to ${email}`);
+}
 
 /**
  * Application Roles
@@ -51,7 +79,6 @@ async function addRoleToUser (userId) {
 }
 
 async function addRolesAndPermissionsToSession (session) {
-  if (typeof session !== typeof SessionContainer) return;
   // we add the user's roles to the user's session
   await session.fetchAndSetClaim(UserRoleClaim);
 
@@ -60,8 +87,6 @@ async function addRolesAndPermissionsToSession (session) {
 }
 
 async function removeRoleFromUserAndTheirSession (session) {
-  if (typeof session !== typeof SessionContainer) return;
-
   const response = await UserRoles.removeUserRole(session.getTenantId(), session.getUserId(), 'user');
 
   if (response.status === 'UNKNOWN_ROLE_ERROR') {
@@ -82,10 +107,9 @@ const schemaSignInUpEmailPassword = (originalImplementation) => {
   return {
     ...originalImplementation,
     signUp: async function (input) {
-      // First we call the original implementation of signUp.
+      // first call the original implementation of signUp.
       const response = await originalImplementation.signUp(input);
 
-      // Post sign up response, we check if it was successful
       if (response.status === 'OK' && response.user.loginMethods.length === 1 && input.session === undefined) {
         await addRoleToUser(response.user.id);
         /**
@@ -101,14 +125,9 @@ const schemaSignInUpEmailPassword = (originalImplementation) => {
                 * - information about if the user's email is verified or not.
                 *
                 */
-        // TODO: how to check if sign-in? (not sign-up)
-        // TODO: post sign up logic
-        // Create user profile in your game database
-        // await createUserProfile(response.user.id, response.user.email);
-        // // Initialize game data for the new user
-        // await initializeGameData(response.user.id);
-        // // Send welcome email
-        // await sendWelcomeEmail(response.user.email);
+        await createUserProfile(response.user.id, response.user.emails[0]);
+        await initializeGameData(response.user.id);
+        await sendWelcomeEmail(response.user.emails[0]);
       }
       return response;
     }
@@ -118,14 +137,26 @@ const schemaSignInUpEmailPassword = (originalImplementation) => {
 const schemaSignInUpThirdParty = (originalImplementation) => {
   return {
     ...originalImplementation,
-    signInUp: async function (input) {
+    signInUp: async function (req) {
       // First we call the original implementation of signInUp.
-      const response = await originalImplementation.signInUp(input);
+      const response = await originalImplementation.signInUp(req);
 
       // Post sign up response, we check if it was successful
       if (response.status === 'OK') {
         await addRoleToUser(response.user.id);
-
+        /**
+                *
+                * response.user contains the following info:
+                * - emails
+                * - id
+                * - timeJoined
+                * - tenantIds
+                * - phone numbers
+                * - third party login info
+                * - all the login methods associated with this user.
+                * - information about if the user's email is verified or not.
+                *
+                */
         const { id, emails } = response.user;
 
         // This is the response from the OAuth 2 provider that contains their tokens or user info.
@@ -134,17 +165,15 @@ const schemaSignInUpThirdParty = (originalImplementation) => {
 
         console.log(id, emails, providerAccessToken, firstName);
 
-        if (input.session === undefined) {
+        if (req.session === undefined) {
           if (response.createdNewRecipeUser && response.user.loginMethods.length === 1) {
-            // TODO: Post sign up logic
-            // Create user profile in your game database
-            // await createUserProfile(response.user.id, response.user.email);
-            // // Initialize game data for the new user
-            // await initializeGameData(response.user.id);
-            // // Send welcome email
-            // await sendWelcomeEmail(response.user.email);
+            // Implement post sign up logic
+            await createUserProfile(id, emails[0]);
+            await initializeGameData(id);
+            await sendWelcomeEmail(emails[0]);
           } else {
-            // TODO: Post sign in logic
+            // TODO: Implement post sign in logic if needed
+            logger.info(`User ${id} signed in`);
           }
         }
       }
@@ -262,6 +291,24 @@ async function appAuth (fastify, options) {
     await addRolesAndPermissionsToSession(request.session);
   });
 
+  // Implement sign out from all devices endpoint // todo do i need this?
+  fastify.post('/auth/signout-all', verifySession(), async (request, reply) => {
+    if (request.session) {
+      await Session.revokeAllSessionsForUser(request.session.getUserId());
+      return { status: 'OK' };
+    }
+    return reply.code(401).send({ error: 'No active session' });
+  });
+
+  fastify.post('/auth/signout', verifySession(), async (request, reply) => {
+    if (request.session) {
+      await removeRoleFromUserAndTheirSession(request.session);
+      await request.session.revokeSession();
+      return { status: 'OK' };
+    }
+    return reply.code(401).send({ error: 'No active session' });
+  });
+
   fastify.get('/online', async (request, reply) => {
     const session = request.session;
     const response = { onlineUsers: [] }; // Fetch this from your database
@@ -288,13 +335,17 @@ async function appAuth (fastify, options) {
    */
 
   fastify.get('/profile', { preHandler: verifySession() }, async (request, reply) => {
-    // const session = request.session;
-    // View user profile
+    const session = request.session;
+    // TODO: Implement view user profile logic
+    const userProfile = await getUserProfile(session.getUserId());
+    return userProfile;
   });
 
   fastify.get('/settings', { preHandler: verifySession() }, async (request, reply) => {
-    // const session = request.session;
-    // View user profile
+    const session = request.session;
+    // TODO: Implement view user settings logic
+    const userSettings = await getUserSettings(session.getUserId());
+    return userSettings;
   });
 
   fastify.get('/auth/admin', { preHandler: verifySession() }, async (request, reply) => {
