@@ -136,6 +136,14 @@ async function appAuth (fastify, options) {
   const authDiscordConfig = config.get('authDiscord');
   const authSupertokensConfig = config.get('authSupertokens');
 
+  // Do not attempt initialization without proper configuration
+  const requiredConfigs = ['appName', 'apiDomain', 'websiteDomain', 'apiBasePath', 'websiteBasePath'];
+  for (const configItem of requiredConfigs) {
+    if (!authConfig[configItem]) {
+      throw new Error(`Missing required configuration: ${configItem}`);
+    }
+  }
+
   /**
    * Admin Emails
    */
@@ -217,8 +225,26 @@ async function appAuth (fastify, options) {
   // (Does this) add supertokens routes to the server (e.g., /auth/signin/, /auth/signup/) ?
   await fastify.register(plugin);
 
-  // Error Handler (Supertokens)
-  fastify.setErrorHandler(errorHandler());
+  // Custom error handler that incorporates SuperTokens error handling
+  fastify.setErrorHandler((error, request, reply) => {
+  // Call the SuperTokens error handler first
+    const supertokensResponse = errorHandler()(error, request, reply);
+    if (supertokensResponse) {
+      return supertokensResponse;
+    }
+
+    // Your custom error handling logic
+    switch (error.type) {
+      case 'UNAUTHORIZED':
+        return reply.code(401).send({ error: 'Authentication required' });
+      case 'FORBIDDEN':
+        return reply.code(403).send({ error: 'Access denied' });
+      case 'NOT_FOUND':
+        return reply.code(404).send({ error: 'Resource not found' });
+      default:
+        return reply.code(500).send({ error: 'Internal server error' });
+    }
+  });
 
   // Supertokens : Session Handler
   fastify.addHook('preHandler', async (request, reply) => {
@@ -233,12 +259,31 @@ async function appAuth (fastify, options) {
     // View all users online (unless hidden)
   });
 
+  fastify.get('/play', async (request, reply) => {
+    // const session = request.session;
+    // View all users online (unless hidden)
+  });
+
   /**
    * PROTECTED ROUTES
    */
   fastify.get('/profile', { preHandler: verifySession() }, async (request, reply) => {
     // const session = request.session;
     // View user profile
+  });
+
+  fastify.get('/settings', { preHandler: verifySession() }, async (request, reply) => {
+    // const session = request.session;
+    // View user profile
+  });
+
+  fastify.get('/auth/admin', { preHandler: verifySession() }, async (request, reply) => {
+    const session = request.session;
+    const roles = await session.getClaimValue(UserRoleClaim);
+    if (!roles.includes('admin')) {
+      return reply.code(403).send({ error: 'Access denied' });
+    }
+    // Admin panel logic here
   });
 
   /**
